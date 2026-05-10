@@ -1,3 +1,9 @@
+# Optimizaciones y Desempeño, Seccion A
+Group # 6
+Francisco Magdiel Asicona Mateo 26006399
+Sergio Geovany García Smith     25008130 
+Sergio Rolando Oliva del Valle  26005694
+
 # Terraform Infrastructure Workspace
 
 This directory contains the Terraform workspace and infrastructure configuration for the project.
