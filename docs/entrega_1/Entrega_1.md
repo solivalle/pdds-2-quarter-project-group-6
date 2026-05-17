@@ -33,12 +33,13 @@ Infraestructura en la Nube · Ciclo Mayo–Junio 2026
 
 ## 1. Resumen Ejecutivo
 
-Las organizaciones medianas de tecnología enfrentan un problema recurrente: los incidentes operativos y solicitudes de soporte se gestionan a través de canales dispersos (correo, Slack, llamadas) sin trazabilidad, sin SLAs definidos y sin visibilidad para la gerencia. El resultado es que los problemas críticos se pierden entre ruido, los tiempos de respuesta son inconsistentes y es imposible medir la calidad del soporte.
+En la actualidad compañias de diversos sectores enfrentan un problema recurrente: los incidentes operativos y solicitudes de soporte se gestionan a través de canales dispersos (correo, Slack, llamadas) sin trazabilidad, sin SLAs definidos y sin visibilidad para la gerencia. El resultado es que los problemas críticos se pierden entre ruido, los tiempos de respuesta son inconsistentes y es imposible medir la calidad del soporte.
 
-**TicketFlow** es un sistema backend de gestión de tickets e incidentes diseñado para equipos de TI y operaciones de entre 10 y 200 personas. Centraliza el registro, priorización, asignación y seguimiento de solicitudes operativas en un único sistema con SLAs configurables por prioridad, escalamiento automático cuando los tiempos se incumplen, y notificaciones multicanal (email, SMS) para mantener a los involucrados informados sin que tengan que consultar el sistema.
+**TicketFlow** es un sistema backend de gestión de tickets e incidentes diseñado para equipos que busquen una trazabilidad y ejecucion optima de sus operaciones de entre 10 y 200 personas. Centraliza el registro, priorización, asignación y seguimiento de solicitudes operativas en un único sistema con SLAs configurables por prioridad, escalamiento automático cuando los tiempos se incumplen, y notificaciones multicanal (email, SMS) para mantener a los involucrados informados sin que tengan que consultar el sistema.
 
 **Qué evita o automatiza:**
 - Elimina el seguimiento manual por correo y Slack.
+- Evita que las peticiones queden rezagadas o perdidas en el día a día sin que se les proporcione su debido seguimiento.
 - Automatiza el escalamiento: si un ticket P1 no tiene respuesta en 2 horas, el sistema escala automáticamente al supervisor sin intervención humana.
 - Genera reportes de resolución y cumplimiento de SLA sin trabajo manual del equipo.
 
@@ -52,7 +53,7 @@ Las organizaciones medianas de tecnología enfrentan un problema recurrente: los
 | Actor | Descripción | Interacción principal |
 |---|---|---|
 | **Usuario final (Solicitante)** | Empleado o cliente que reporta un problema o solicita soporte | Crea tickets, adjunta evidencias, consulta el estado de su solicitud |
-| **Agente de soporte** | Técnico responsable de resolver tickets asignados | Recibe asignaciones, actualiza estados, agrega comentarios, cierra tickets |
+| **Agente de soporte** | Técnico responsable de resolver tickets asignados | Recibe asignaciones, define líneas de escalamiento, actualiza estados, agrega comentarios, cierra tickets |
 | **Supervisor / Líder de equipo** | Coordina al equipo de agentes, gestiona escalamientos | Reasigna tickets, revisa métricas de su equipo, configura reglas de escalamiento |
 
 ### Actores de Soporte
@@ -81,8 +82,8 @@ Las organizaciones medianas de tecnología enfrentan un problema recurrente: los
 | **Actor** | Usuario final (Solicitante) |
 | **Como** | Usuario final |
 | **Quiero** | Registrar un nuevo ticket con título, descripción, categoría y adjuntos |
-| **Para que** | El equipo de soporte pueda atender mi problema de manera formal y trazable |
-| **Criterio de éxito** | El ticket queda registrado con un ID único, se asigna la prioridad por defecto según categoría, el usuario recibe confirmación por correo con el ID del ticket, y el ticket aparece en la cola del agente en menos de 30 segundos |
+| **Para que** | El equipo de soporte pueda atender mi problema de manera inmediata, formal y trazable |
+| **Criterio de éxito** | El ticket queda registrado con un ID único, se asigna la prioridad correspondiente, el usuario recibe confirmación por correo con el ID del ticket, y el ticket aparece en la cola del agente en menos de 30 segundos |
 
 ---
 
@@ -110,7 +111,7 @@ Las organizaciones medianas de tecnología enfrentan un problema recurrente: los
 | **Como** | Supervisor |
 | **Quiero** | Que el sistema me notifique automáticamente cuando un ticket supera el tiempo de SLA sin respuesta |
 | **Para que** | Ningún incidente crítico quede sin atención por olvido o sobrecarga |
-| **Criterio de éxito** | El sistema evalúa tickets cada 5 minutos. Si un ticket P1 supera 2 horas sin actualización, se envía notificación al supervisor y se reasigna. El ticket queda marcado como "escalado" con registro del evento |
+| **Criterio de éxito** | El sistema evalúa tickets cada 5 minutos. Si un ticket P0 supera 2 horas sin actualización, se envía notificación al supervisor y se reasigna. El ticket queda marcado como "escalado" con registro del evento |
 
 ---
 
@@ -122,7 +123,7 @@ Las organizaciones medianas de tecnología enfrentan un problema recurrente: los
 | **Prioridad** | P1 — Importante |
 | **Actor** | Agente de soporte |
 | **Como** | Agente de soporte |
-| **Quiero** | Que el sistema sugiera una prioridad inicial (P1–P4) basada en la categoría y palabras clave del título |
+| **Quiero** | Que el sistema sugiera una prioridad inicial (P0–P4) basada en la categoría y palabras clave del título |
 | **Para que** | Los tickets críticos no queden enterrados entre solicitudes de baja urgencia |
 | **Criterio de éxito** | Al crear el ticket, el sistema sugiere una prioridad con base en reglas configurables. El agente puede ajustarla manualmente y el SLA se recalcula automáticamente |
 
@@ -180,7 +181,7 @@ Las organizaciones medianas de tecnología enfrentan un problema recurrente: los
 | **Como** | Agente o supervisor |
 | **Quiero** | Configurar qué eventos me notifican por correo y cuáles por SMS |
 | **Para que** | Solo reciba alertas por el canal adecuado según la urgencia |
-| **Criterio de éxito** | Cada usuario configura sus preferencias por tipo de evento (asignación, escalamiento, resolución). Las notificaciones P1 siempre envían SMS independientemente de las preferencias |
+| **Criterio de éxito** | Cada usuario configura sus preferencias por tipo de evento (asignación, escalamiento, resolución). Las notificaciones P0-P1 siempre envían SMS independientemente de las preferencias |
 
 ---
 
@@ -189,7 +190,7 @@ Las organizaciones medianas de tecnología enfrentan un problema recurrente: los
 Estas son las funcionalidades que diferencian a TicketFlow del enunciado genérico. Lo genérico (CRUD de tickets) no se lista aquí.
 
 ### 4.1 Motor de SLA con cálculo dinámico
-- Tiempos de respuesta y resolución configurables por prioridad: P1 (2h respuesta / 4h resolución), P2 (4h/8h), P3 (8h/24h), P4 (24h/72h).
+- Tiempos de respuesta y resolución configurables por prioridad: P0 (2h respuesta / 4h resolución), P1 (4h/8h), P2 (8h/24h), P3 (24h/72h), P4 (72h/120h).
 - El reloj de SLA se pausa fuera del horario laboral configurable (ej. 8:00–18:00 en zona horaria del cliente).
 - Los tickets con SLA en riesgo (>75% del tiempo consumido) se marcan visualmente en la interfaz del agente.
 
@@ -331,7 +332,7 @@ Portal donde el usuario final puede ver sus tickets, crear nuevos y buscar en la
 
 | Funcionalidad | Justificación |
 |---|---|
-| Creación y gestión de tickets con prioridad P1–P4 | Funcionalidad core del sistema |
+| Creación y gestión de tickets con prioridad P0–P4 | Funcionalidad core del sistema |
 | SLA configurable por prioridad con pausa en horario no laboral | Diferenciador clave respecto a un CRUD simple |
 | Escalamiento automático con reglas configurables | Automatización que elimina supervisión manual |
 | Notificaciones por email al cambiar estado o vencer SLA | Mantiene a los involucrados informados sin consultar el sistema |
@@ -364,7 +365,7 @@ Las siguientes preguntas de producto y scope están abiertas en esta entrega. La
 1. ¿El sistema debe soportar múltiples idiomas desde v1 o solo español?
 2. ¿Los reportes programados (semanales/mensuales) se envían por correo o solo están disponibles en el portal?
 3. ¿El portal de usuarios finales requiere autenticación propia o se integra con el SSO corporativo del cliente?
-4. ¿El administrador del sistema puede personalizar los niveles de prioridad (P1–P4) o son fijos?
+4. ¿El administrador del sistema puede personalizar los niveles de prioridad (P0–P4) o son fijos?
 5. ¿El sistema debe soportar múltiples equipos de soporte con colas separadas dentro de la misma organización?
 
 ---
@@ -385,7 +386,7 @@ Las siguientes preguntas de producto y scope están abiertas en esta entrega. La
 ### Qué aceptamos (y por qué)
 
 - **Estructura del documento:** La IA sugirió organizar el documento con las secciones del rúbrica del curso. Aceptamos esta estructura porque coincidía con los requisitos del proyecto.
-- **Terminología de SLA:** La IA definió los tiempos P1–P4 típicos de la industria. Los aceptamos como punto de partida razonable para el dominio de TI corporativo.
+- **Terminología de SLA:** La IA definió los tiempos P0–P4 típicos de la industria. Los aceptamos como punto de partida razonable para el dominio de TI corporativo.
 - **Generación de mockups:** Los wireframes fueron generados con prompts muy específicos que el equipo elaboró basándose en los casos de uso. Los aceptamos como base visual que refleja los flujos diseñados por el equipo.
 
 ### Qué editamos significativamente
