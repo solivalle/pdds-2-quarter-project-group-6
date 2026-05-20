@@ -1,0 +1,10 @@
+% aws ec2 describe-instances \
+  --region us-west-2 \
+  --filters Name=tag:Name,Values=pdds-2-quarter-project-group-6-dev-ec2-instance \
+  --query 'Reservations[*].Instances[*].[InstanceId,State.Name,PublicIpAddress]' \
+  --output table
+----------------------------------------------------
+|                 DescribeInstances                |
++----------------------+----------+----------------+
+|  i-0d17428476e572390 |  running |  35.91.27.176  |
++----------------------+----------+----------------+

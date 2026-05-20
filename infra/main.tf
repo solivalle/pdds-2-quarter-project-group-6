@@ -8,6 +8,17 @@ module "storage" {
   lifecycle_expire_days  = 365
 }
 
+module "compute" {
+  source = "./modules/compute"
+
+  vpc_id              = var.vpc_id
+  environment         = var.environment
+  project_name        = var.project_name
+  ami_id              = var.ami_id
+  instance_type       = var.instance_type
+  allowed_cidr_blocks = var.allowed_cidr_blocks
+}
+
 resource "time_sleep" "lock_demo" {
   create_duration = "20s"
 }
