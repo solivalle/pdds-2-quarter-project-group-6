@@ -7,3 +7,7 @@ module "storage" {
   lifecycle_glacier_days = 90
   lifecycle_expire_days  = 365
 }
+
+resource "time_sleep" "lock_demo" {
+  create_duration = "20s"
+}

@@ -61,7 +61,7 @@ Export the credentials in your terminal:
 ```bash
 export AWS_ACCESS_KEY_ID="your-access-key-id"
 export AWS_SECRET_ACCESS_KEY="your-secret-access-key"
-export AWS_REGION="us-east-1"
+export AWS_REGION="us-west-1"
 ```
 
 ### Windows PowerShell
@@ -69,7 +69,7 @@ export AWS_REGION="us-east-1"
 ```powershell
 $env:AWS_ACCESS_KEY_ID="your-access-key-id"
 $env:AWS_SECRET_ACCESS_KEY="your-secret-access-key"
-$env:AWS_REGION="us-east-1"
+$env:AWS_REGION="us-west-1"
 ```
 
 ### Verify Credentials
