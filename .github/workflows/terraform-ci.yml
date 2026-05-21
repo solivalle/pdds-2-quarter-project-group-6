@@ -33,7 +33,7 @@ jobs:
         working-directory: infra
 
       - name: Terraform Init
-        run: terraform init -backend=false
+        run: terraform init
         working-directory: infra
 
       - name: Terraform Validate
