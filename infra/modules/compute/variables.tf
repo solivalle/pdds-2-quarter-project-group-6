@@ -27,5 +27,5 @@ variable "allowed_cidr_blocks" {
 
 variable "vpc_id" {
   description = "VPC ID where the EC2 instance will be deployed"
-  type = string
+  type        = string
 }

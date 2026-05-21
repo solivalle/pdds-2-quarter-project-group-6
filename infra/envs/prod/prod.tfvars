@@ -5,6 +5,6 @@ region       = "us-west-2"
 allowed_cidr_blocks = [
   "0.0.0.0/0"
 ]
-vpc_id = "<your-prod-vpc-id>"
+vpc_id        = "vpc-01ba5d9034cf7231b"
 ami_id        = "ami-0ddb64e71e68cf624"
 instance_type = "t4g.nano"

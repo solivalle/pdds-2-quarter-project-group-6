@@ -19,6 +19,13 @@ module "compute" {
   allowed_cidr_blocks = var.allowed_cidr_blocks
 }
 
+module "database" {
+  source = "./modules/database"
+
+  environment  = var.environment
+  project_name = var.project_name
+}
+
 resource "time_sleep" "lock_demo" {
   create_duration = "20s"
 }

@@ -22,3 +22,13 @@ output "instance_arn" {
   description = "EC2 instance ARN"
   value       = module.compute.instance_arn
 }
+
+output "database_table_name" {
+  description = "DynamoDB table name"
+  value       = module.database.table_name
+}
+
+output "database_table_arn" {
+  description = "DynamoDB table ARN"
+  value       = module.database.table_arn
+}

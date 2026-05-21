@@ -16,7 +16,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
   rule {
     id     = "oyd-archive-tiering"
     status = "Enabled"
-    filter {}
+    filter {
+      prefix = "tickets/"
+    }
 
     transition {
       days          = var.lifecycle_ia_days
