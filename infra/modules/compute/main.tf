@@ -26,8 +26,8 @@ resource "aws_security_group" "instance" {
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port   = 8080
-    to_port     = 8080
+    from_port   = 8090
+    to_port     = 8090
     protocol    = "tcp"
     cidr_blocks = var.allowed_cidr_blocks
   }
