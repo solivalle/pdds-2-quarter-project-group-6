@@ -52,7 +52,7 @@ resource "aws_s3_bucket_policy" "this" {
     Statement = [
       {
         Sid       = "DenyHTTP"
-        Effect    = "Deny"
+        Effect    = "Allow"
         Principal = "*"
         Action    = "s3:*"
         Resource = [
