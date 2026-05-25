@@ -25,12 +25,13 @@ Infraestructura en la Nube · Ciclo Mayo–Junio 2026
 4. [Casos de Uso Priorizados](#4-casos-de-uso-priorizados)
 5. [Funcionalidades Específicas del Proyecto](#5-funcionalidades-específicas-del-proyecto)
 6. [Mockups del Frontend](#6-mockups-del-frontend)
-7. [Decisión de Cómputo](#7-decisión-de-cómputo)
-8. [Modelo de Datos](#8-modelo-de-datos)
-9. [Mapeo a Conceptos del Curso](#9-mapeo-a-conceptos-del-curso)
-10. [Scope (In/Out)](#10-scope-inout)
-11. [Preguntas Abiertas](#11-preguntas-abiertas)
-12. [Anexo IA](#12-anexo-ia)
+7. [Diagrama de Contexto](#7-diagrama-de-contexto)
+8. [Decisión de Cómputo](#8-decisión-de-cómputo)
+9. [Modelo de Datos](#9-modelo-de-datos)
+10. [Mapeo a Conceptos del Curso](#10-mapeo-a-conceptos-del-curso)
+11. [Scope (In/Out)](#11-scope-inout)
+12. [Preguntas Abiertas](#12-preguntas-abiertas)
+13. [Anexo IA](#13-anexo-ia)
 
 ---
 
@@ -244,8 +245,79 @@ Estas son las funcionalidades que diferencian a TicketFlow del enunciado genéri
 ![Portal de Autoservicio para Usuarios Finales](../entrega_1/mockup_portal_usuario.png)
 
 ---
+## 7. Diagrama de Contexto
 
-## 7. Decisión de Cómputo
+TicketFlow es una plataforma orientada a la gestión de tickets e incidentes operativos, diseñada para centralizar el registro, seguimiento, priorización y resolución de solicitudes de soporte dentro de una organización. El sistema busca eliminar procesos manuales dispersos entre correo electrónico, mensajería instantánea y hojas de cálculo, proporcionando trazabilidad completa, automatización de escalamiento y monitoreo continuo del ciclo de vida de cada incidente.
+
+El siguiente diagrama representa el contexto general de TicketFlow y define el límite funcional del sistema dentro de la arquitectura propuesta. Su objetivo es identificar los actores externos que interactúan con la plataforma, los servicios administrados de terceros utilizados para soportar funcionalidades críticas y los principales componentes lógicos que conforman el núcleo de la aplicación.
+
+Este nivel de representación se enfoca en comprender cómo TicketFlow se relaciona con usuarios, sistemas externos y servicios cloud, sin entrar todavía en detalles de infraestructura de red, segmentación de subnets o topología interna. 
+
+El diagrama permite visualizar de forma clara:
+
+- Los actores humanos que utilizan el sistema y sus principales interacciones.
+- El límite del sistema TicketFlow y los componentes responsables de la lógica de negocio.
+- Los servicios administrados de AWS utilizados para persistencia, almacenamiento y notificaciones.
+- Las integraciones externas relacionadas con automatización y ciclo de vida del software.
+
+Esta representación sirve como base para justificar posteriormente las decisiones de cómputo, persistencia, procesamiento asíncrono y automatización de infraestructura desarrolladas a lo largo del proyecto.
+
+```mermaid
+flowchart LR
+
+    subgraph actors["Actores externos"]
+        user["Usuario solicitante"]
+        agent["Agente de soporte"]
+        supervisor["Supervisor"]
+        admin["Administrador"]
+    end
+
+    subgraph ticketflow["Límite del sistema: TicketFlow"]
+        api["API Backend NodeJS"]
+        sla["Motor de SLA y escalamiento"]
+        reports["Módulo de reportes"]
+    end
+
+    subgraph aws["Servicios AWS"]
+        ddb[("Amazon DynamoDB<br/>Tickets, historial y auditoría")]
+        s3[("Amazon S3<br/>Adjuntos y evidencias")]
+        ses["Amazon SES<br/>Correo electrónico"]
+        sns["Amazon SNS<br/>Alertas y notificaciones"]
+    end
+
+    github["GitHub<br/>Repositorio y CI/CD"]
+
+    user -->|"Crea y consulta tickets"| api
+    agent -->|"Gestiona incidentes"| api
+    supervisor -->|"Monitorea SLA y reasigna"| api
+    admin -->|"Configura reglas y usuarios"| api
+
+    api -->|"Metadata estructurada"| ddb
+    api -->|"Archivos adjuntos"| s3
+    api -->|"Notificaciones por correo"| ses
+
+    sla -->|"Evalúa vencimientos"| ddb
+    sla -->|"Dispara alertas"| sns
+
+    reports -->|"Consulta métricas operativas"| ddb
+
+    github -.->|"Automatización IaC y CI/CD"| api
+```
+
+### Descripción del Contexto
+
+Los actores principales del sistema son los usuarios solicitantes, quienes crean y consultan tickets; los agentes de soporte, responsables de atender y actualizar incidentes; los supervisores, encargados de monitorear cumplimiento de SLA, métricas operativas y reasignaciones; y los administradores, quienes gestionan reglas, configuraciones y parámetros globales de la plataforma.
+
+Dentro del límite del sistema se encuentran los componentes centrales de TicketFlow. La API Backend desarrollada en NodeJS expone los endpoints responsables de recibir solicitudes, procesar reglas de negocio y coordinar la interacción entre los distintos servicios. El motor de SLA y escalamiento automático evalúa continuamente tiempos de atención y resolución para detectar incumplimientos y generar alertas o reasignaciones automáticas. Finalmente, el módulo de reportes permite consultar métricas operativas, indicadores de rendimiento y trazabilidad histórica de los incidentes.
+
+Fuera del límite del sistema se encuentran los servicios administrados de AWS y plataformas externas que soportan capacidades específicas de la solución. Amazon DynamoDB es utilizado para almacenar metadata estructurada de tickets, historial de estados, auditoría y relaciones operativas de alta frecuencia. Amazon S3 funciona como repositorio de archivos adjuntos, capturas, evidencias y documentos asociados a cada incidente. Los servicios Amazon SES y Amazon SNS permiten el envío automatizado de correos, alertas y notificaciones relacionadas con cambios de estado, escalamientos y vencimientos de SLA.
+
+Adicionalmente, GitHub actúa como plataforma de control de versiones y automatización del ciclo de vida DevOps mediante Terraform y GitHub Actions, permitiendo integrar diseño de infraestructura, despliegue automatizado y validación continua dentro del proyecto.
+
+Este diagrama representa exclusivamente el contexto funcional y las relaciones de alto nivel del sistema. Las decisiones relacionadas con arquitectura de red, segmentación de capas, VPC, subnets, seguridad y conectividad serán desarrolladas posteriormente en la Entrega 3 del proyecto.
+
+
+## 8. Decisión de Cómputo
 
 Para la implementación del backend de TicketFlow se evaluaron tres estrategias de cómputo sobre AWS para ejecutar la aplicación NodeJS: **Amazon EC2 con Auto Scaling**, **AWS Lambda (Serverless)** y **Amazon ECS Fargate**.  
 
@@ -253,7 +325,7 @@ La decisión final fue utilizar **Amazon EC2** mediante Launch Templates y capac
 
 El sistema TicketFlow requiere ejecutar lógica continua relacionada al cálculo y monitoreo de SLAs, además de permitir iteraciones rápidas sobre el backend NodeJS. Debido a esto, se priorizó una arquitectura con control total sobre el runtime y el proceso de ejecución.
 
-### 7.1 Opción Seleccionada — Amazon EC2 con Auto Scaling
+### 8.1 Opción Seleccionada — Amazon EC2 con Auto Scaling
 
 La arquitectura seleccionada consiste en desplegar el backend NodeJS sobre instancias EC2 Linux administradas mediante Launch Templates y Auto Scaling Groups.  
 
@@ -268,7 +340,7 @@ Adicionalmente, EC2 habilita un entorno de depuración mucho más flexible para 
 - Recarga instantánea del backend sin necesidad de reconstruir imágenes o desplegar artefactos completos.
 - Acceso completo al sistema operativo para diagnóstico y observabilidad avanzada.
 
-### 7.2 Trade-offs de la Decisión
+### 8.2 Trade-offs de la Decisión
 
 La selección de EC2 implica aceptar ciertos trade-offs arquitectónicos frente a alternativas completamente administradas o serverless.
 
@@ -296,7 +368,7 @@ En contraste, AWS Lambda está diseñado para cargas efímeras y orientadas a ev
 
 El trade-off consiste en que EC2 sacrifica parte de la elasticidad instantánea y escalado automático granular que ofrece el modelo serverless.
 
-### 7.3 Alternativa Evaluada — AWS Lambda
+### 8.3 Alternativa Evaluada — AWS Lambda
 
 AWS Lambda fue considerado inicialmente debido a sus ventajas operativas:
 
@@ -315,7 +387,7 @@ Sin embargo, fue descartado por limitaciones incompatibles con los requerimiento
 
 Aunque Lambda reduce significativamente la carga operativa, el modelo de ejecución orientado a eventos no se adapta correctamente a la lógica persistente requerida por TicketFlow.
 
-### 7.4 Alternativa Evaluada — ECS Fargate
+### 8.4 Alternativa Evaluada — ECS Fargate
 
 También se evaluó Amazon ECS Fargate como alternativa basada en contenedores administrados.
 
@@ -345,7 +417,7 @@ Adicionalmente, Fargate introduce complejidad adicional en:
 
 Para una etapa MVP, esta complejidad fue considerada innecesaria.
 
-### 7.5 Desventaja Reconocida de la Solución Elegida
+### 8.5 Desventaja Reconocida de la Solución Elegida
 
 La principal desventaja reconocida del enfoque basado en EC2 es el costo operativo y económico superior frente a alternativas serverless.
 
@@ -366,11 +438,11 @@ En futuras versiones del sistema, una evolución híbrida hacia arquitecturas ba
 
 ---
 
-## 8. Modelo de Datos
+## 9. Modelo de Datos
 
 El diseño del modelo de datos de **TicketFlow** responde a la necesidad de garantizar una respuesta rápida en las colas de trabajo, almacenamiento seguro y a bajo costo de archivos binarios, e inmutabilidad en el historial de auditoría. Se ha seleccionado una arquitectura híbrida de almacenamiento en la nube en AWS: **Amazon DynamoDB** para la base de datos no relacional de documentos y **Amazon S3** para el almacenamiento de archivos.
 
-### 8.1 Justificación: Base de Datos NoSQL vs. Almacenamiento de Objetos
+### 9.1 Justificación: Base de Datos NoSQL vs. Almacenamiento de Objetos
 
 Para maximizar la eficiencia en costos y rendimiento, TicketFlow divide sus datos de la siguiente manera:
 
@@ -379,7 +451,7 @@ Para maximizar la eficiencia en costos y rendimiento, TicketFlow divide sus dato
 
 ---
 
-### 8.2 Estructura de Datos en Amazon DynamoDB
+### 9.2 Estructura de Datos en Amazon DynamoDB
 
 Se ha definido una única tabla principal llamada `ticketflow-tickets-dev` en DynamoDB. 
 
@@ -489,7 +561,7 @@ Con el objetivo de optimizar los costos de almacenamiento a largo plazo y evitar
 
 ---
 
-### 8.3 Diseño de Almacenamiento en Amazon S3
+### 9.3 Diseño de Almacenamiento en Amazon S3
 
 Los adjuntos del sistema se ubicarán en un bucket denominado `ticketflow-attachments-dev` que cuenta con la siguiente configuración:
 
@@ -507,7 +579,7 @@ Los adjuntos del sistema se ubicarán en un bucket denominado `ticketflow-attach
 
 ---
 
-### 8.4 Justificación de la Estrategia de Caché
+### 9.4 Justificación de la Estrategia de Caché
 
 Para la fase de diseño inicial de TicketFlow se ha decidido **NO implementar una capa de almacenamiento en caché** (como Amazon ElastiCache Redis o DynamoDB Accelerator - DAX):
 
@@ -516,13 +588,13 @@ Para la fase de diseño inicial de TicketFlow se ha decidido **NO implementar un
 
 ---
 
-## 9. Mapeo a Conceptos del Curso
+## 10. Mapeo a Conceptos del Curso
 
 *(Se mantiene el mapeo inicial de la E1 como referencia básica)*
 
 ---
 
-## 10. Scope (In/Out)
+## 11. Scope (In/Out)
 
 ### ✅ Dentro del scope
 *(Mismos elementos que E1)*
@@ -532,13 +604,13 @@ Para la fase de diseño inicial de TicketFlow se ha decidido **NO implementar un
 
 ---
 
-## 11. Preguntas Abiertas
+## 12. Preguntas Abiertas
 
 *(Se actualizará indicando las preguntas técnicas resueltas en esta entrega y cuáles quedan pendientes).*
 
 ---
 
-## 12. Anexo IA
+## 13. Anexo IA
 
 Durante el desarrollo de la Entrega 2 se utilizó inteligencia artificial como herramienta de apoyo para explorar decisiones arquitectónicas, validar trade-offs técnicos y analizar el impacto operativo de distintas alternativas de infraestructura en AWS.
 
