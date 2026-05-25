@@ -247,7 +247,122 @@ Estas son las funcionalidades que diferencian a TicketFlow del enunciado genéri
 
 ## 7. Decisión de Cómputo
 
-*(Esta sección se completará detallando la selección de cómputo, por ejemplo ECS Fargate vs Lambda, junto con sus trade-offs y desventajas).*
+Para la implementación del backend de TicketFlow se evaluaron tres estrategias de cómputo sobre AWS para ejecutar la aplicación NodeJS: **Amazon EC2 con Auto Scaling**, **AWS Lambda (Serverless)** y **Amazon ECS Fargate**.  
+
+La decisión final fue utilizar **Amazon EC2** mediante Launch Templates y capacidad de crecimiento horizontal utilizando Auto Scaling Groups. Esta decisión se tomó considerando que el proyecto se encuentra en una fase MVP con un ciclo de desarrollo altamente iterativo, donde la velocidad de modificación del código, la depuración avanzada y la persistencia de procesos son prioridades más importantes que la abstracción operativa completa.
+
+El sistema TicketFlow requiere ejecutar lógica continua relacionada al cálculo y monitoreo de SLAs, además de permitir iteraciones rápidas sobre el backend NodeJS. Debido a esto, se priorizó una arquitectura con control total sobre el runtime y el proceso de ejecución.
+
+### 7.1 Opción Seleccionada — Amazon EC2 con Auto Scaling
+
+La arquitectura seleccionada consiste en desplegar el backend NodeJS sobre instancias EC2 Linux administradas mediante Launch Templates y Auto Scaling Groups.  
+
+El uso de Launch Templates permite definir una configuración reutilizable para las instancias (AMI, tipo de instancia, IAM Role, Security Groups y bootstrap scripts), mientras que Auto Scaling Groups permiten incrementar o disminuir la cantidad de instancias automáticamente dependiendo de métricas como utilización de CPU o tráfico de red.
+
+Este enfoque proporciona un entorno persistente de ejecución donde el proceso de NodeJS permanece activo continuamente, lo cual es especialmente importante para los procesos internos de monitoreo de SLA y tareas de larga duración.
+
+Adicionalmente, EC2 habilita un entorno de depuración mucho más flexible para el equipo de desarrollo:
+
+- Conexión segura mediante AWS Systems Manager (SSM) sin necesidad de exponer SSH públicamente.
+- Uso de herramientas como PM2, Nodemon o `node inspect` para depuración en tiempo real.
+- Recarga instantánea del backend sin necesidad de reconstruir imágenes o desplegar artefactos completos.
+- Acceso completo al sistema operativo para diagnóstico y observabilidad avanzada.
+
+### 7.2 Trade-offs de la Decisión
+
+La selección de EC2 implica aceptar ciertos trade-offs arquitectónicos frente a alternativas completamente administradas o serverless.
+
+#### Trade-off 1 — Mayor control operativo vs. mayor responsabilidad administrativa
+
+EC2 proporciona control total sobre el entorno de ejecución, networking y procesos del sistema operativo. Esto facilita enormemente la depuración avanzada y el ajuste fino del runtime de NodeJS.
+
+Sin embargo, este control también implica mayor responsabilidad operativa:
+
+- Administración del sistema operativo.
+- Actualizaciones de seguridad.
+- Hardening de la instancia.
+- Monitoreo de capacidad.
+- Gestión del ciclo de vida de la infraestructura.
+
+En enfoques como Lambda o Fargate, gran parte de estas responsabilidades son abstraídas por AWS.
+
+#### Trade-off 2 — Persistencia y procesos continuos vs. elasticidad serverless inmediata
+
+El motor de SLA de TicketFlow requiere ejecutar verificaciones continuas sobre tickets abiertos y tiempos de expiración. EC2 permite mantener procesos persistentes ejecutándose indefinidamente sin restricciones de tiempo.
+
+Esto simplifica significativamente la implementación de loops de monitoreo y procesos background en NodeJS.
+
+En contraste, AWS Lambda está diseñado para cargas efímeras y orientadas a eventos. Las funciones Lambda tienen un tiempo máximo de ejecución de 15 minutos y su entorno puede congelarse entre invocaciones, lo que dificulta ejecutar procesos continuos en memoria de forma confiable.
+
+El trade-off consiste en que EC2 sacrifica parte de la elasticidad instantánea y escalado automático granular que ofrece el modelo serverless.
+
+### 7.3 Alternativa Evaluada — AWS Lambda
+
+AWS Lambda fue considerado inicialmente debido a sus ventajas operativas:
+
+- No requiere administrar servidores.
+- Escalado automático administrado por AWS.
+- Cobro basado únicamente en ejecución.
+- Alta integración con eventos nativos de AWS.
+
+Sin embargo, fue descartado por limitaciones incompatibles con los requerimientos operativos del proyecto:
+
+- Tiempo máximo de ejecución de 15 minutos.
+- Naturaleza efímera del runtime.
+- Dificultad para ejecutar loops persistentes de monitoreo SLA.
+- Complejidad para depuración avanzada en tiempo real.
+- Posibles latencias por cold starts en funciones poco utilizadas.
+
+Aunque Lambda reduce significativamente la carga operativa, el modelo de ejecución orientado a eventos no se adapta correctamente a la lógica persistente requerida por TicketFlow.
+
+### 7.4 Alternativa Evaluada — ECS Fargate
+
+También se evaluó Amazon ECS Fargate como alternativa basada en contenedores administrados.
+
+Fargate elimina la necesidad de administrar servidores EC2 directamente y ofrece ventajas importantes:
+
+- Aislamiento mediante contenedores.
+- Mejor portabilidad de workloads.
+- Escalabilidad administrada.
+- Integración con ECS y balanceadores de carga.
+
+No obstante, para una aplicación MVP en constante iteración, Fargate introduce fricción significativa en el ciclo de desarrollo:
+
+1. Construcción del contenedor Docker.
+2. Tagueo de imágenes.
+3. Push hacia Amazon ECR.
+4. Actualización de Task Definitions.
+5. Redeploy del servicio ECS.
+
+Estos pasos añaden minutos de latencia para cada pequeño cambio en el backend, afectando negativamente el feedback loop del equipo y reduciendo la velocidad de experimentación y depuración.
+
+Adicionalmente, Fargate introduce complejidad adicional en:
+
+- Configuración de networking.
+- Load Balancers.
+- Service Discovery.
+- Gestión de subredes privadas y públicas.
+
+Para una etapa MVP, esta complejidad fue considerada innecesaria.
+
+### 7.5 Desventaja Reconocida de la Solución Elegida
+
+La principal desventaja reconocida del enfoque basado en EC2 es el costo operativo y económico superior frente a alternativas serverless.
+
+A diferencia de AWS Lambda, donde únicamente se paga por tiempo efectivo de ejecución, una instancia EC2 permanece encendida continuamente incluso durante períodos de baja actividad o inactividad parcial.
+
+Esto implica:
+
+- Costos permanentes de cómputo.
+- Pago continuo por capacidad provisionada.
+- Costos asociados a almacenamiento EBS y monitoreo.
+- Mayor riesgo de sobreaprovisionamiento.
+
+Incluso utilizando instancias pequeñas y Auto Scaling Groups, el costo base de mantener infraestructura persistente es generalmente superior al modelo event-driven de Lambda para cargas pequeñas o intermitentes.
+
+Sin embargo, se aceptó este costo adicional debido a que el beneficio obtenido en velocidad de desarrollo, facilidad de depuración, persistencia de procesos y simplicidad operativa para el equipo supera el ahorro económico potencial de las alternativas serverless en esta etapa del proyecto.
+
+En futuras versiones del sistema, una evolución híbrida hacia arquitecturas basadas en contenedores o componentes serverless podría reevaluarse una vez estabilizado el producto y reducida la necesidad de iteración constante sobre el backend.
 
 ---
 
