@@ -540,4 +540,49 @@ Para la fase de diseño inicial de TicketFlow se ha decidido **NO implementar un
 
 ## 12. Anexo IA
 
-*(Se describirá el uso de IA para la E2).*
+Durante el desarrollo de la Entrega 2 se utilizó inteligencia artificial como herramienta de apoyo para explorar decisiones arquitectónicas, validar trade-offs técnicos y analizar el impacto operativo de distintas alternativas de infraestructura en AWS.
+
+El principal enfoque técnico explorado mediante IA estuvo relacionado con la selección de la plataforma de cómputo para ejecutar el backend NodeJS de TicketFlow. Específicamente, se analizaron escenarios utilizando:
+
+- Amazon ECS Fargate.
+
+La exploración con IA se enfocó particularmente en comprender las implicaciones reales de adoptar una arquitectura basada en contenedores utilizando Amazon ECS Fargate durante una etapa temprana y altamente iterativa del proyecto.
+
+La herramienta de IA permitió modelar distintos escenarios operativos y de desarrollo considerando factores como:
+
+- frecuencia de despliegues,
+- velocidad de iteración del código,
+- complejidad de depuración,
+- persistencia de procesos,
+- tiempos de retroalimentación del equipo,
+- complejidad de networking,
+- y esfuerzo operativo asociado a pipelines de contenedores.
+
+A través de estas simulaciones y análisis se concluyó que, aunque Fargate representa una solución moderna y altamente administrada para workloads contenerizados, su adopción temprana en un proyecto con alta volatilidad funcional podía introducir fricción significativa en el ciclo de desarrollo.
+
+La IA ayudó a evaluar el impacto técnico de que cada pequeño cambio en el backend requiriera un flujo completo de contenerización, incluyendo:
+
+1. Construcción de imágenes Docker.
+2. Tagueo y versionado de imágenes.
+3. Publicación hacia Amazon ECR.
+4. Actualización de Task Definitions.
+5. Redeploy del servicio ECS/Fargate.
+6. Espera de estabilización del servicio y health checks.
+
+Se analizó que este proceso añade varios minutos de latencia para cada modificación del código, lo cual afecta negativamente el feedback loop del equipo de desarrollo.
+
+Debido a que TicketFlow se encuentra en una etapa MVP, se prevé que el backend requiera múltiples iteraciones rápidas antes de alcanzar estabilidad funcional. Esto implica realizar cambios frecuentes sobre reglas de negocio, cálculos de SLA, lógica de escalamiento y manejo de estados de tickets. En este contexto, reducir el tiempo entre modificar código y validar resultados se consideró crítico.
+
+La IA también permitió explorar escenarios de depuración avanzada sobre ECS Fargate y los retos asociados a diagnosticar problemas en entornos contenerizados cuando todavía no existe un dominio profundo del comportamiento interno de la aplicación.
+
+Entre los factores identificados se encuentran:
+
+- necesidad de inspeccionar logs distribuidos,
+- complejidad de tracing entre contenedores,
+- dificultad para adjuntar herramientas interactivas de depuración,
+- dependencia de pipelines de CI/CD más elaborados,
+- y mayor complejidad para aislar errores relacionados con networking o configuración de tareas ECS.
+
+Adicionalmente, se evaluó cómo la abstracción operativa de Fargate puede simplificar la administración de infraestructura en etapas maduras del producto, pero al mismo tiempo dificultar la observabilidad y experimentación rápida durante fases tempranas de desarrollo.
+
+La IA fue utilizada como herramienta de análisis comparativo para identificar estos trade-offs y estimar el impacto operativo de cada decisión antes de implementarla. Esto permitió al equipo justificar técnicamente la selección de EC2 como plataforma inicial de cómputo, priorizando velocidad de iteración, simplicidad de depuración y persistencia de procesos sobre optimizaciones operativas avanzadas orientadas a entornos de producción maduros.
