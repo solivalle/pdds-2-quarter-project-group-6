@@ -316,6 +316,7 @@ Adicionalmente, GitHub actúa como plataforma de control de versiones y automati
 
 Este diagrama representa exclusivamente el contexto funcional y las relaciones de alto nivel del sistema. Las decisiones relacionadas con arquitectura de red, segmentación de capas, VPC, subnets, seguridad y conectividad serán desarrolladas posteriormente en la Entrega 3 del proyecto.
 
+---
 
 ## 8. Decisión de Cómputo
 
