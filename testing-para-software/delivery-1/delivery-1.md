@@ -1,502 +1,582 @@
-# Plan de Pruebas – Sistema de Gestión de Incidentes
+# Plan de Pruebas – TicketFlow
 
-## 1. Objetivos de las pruebas
+## Sistema de Gestión de Incidentes
 
-El objetivo principal de las pruebas es validar que el sistema de gestión de incidentes funcione correctamente bajo diferentes escenarios operativos, garantizando:
+## Tabla de Contenidos
 
-- Correcto registro y escalamiento de incidentes.
-- Integridad y persistencia de los datos en DynamoDB.
-- Correcta comunicación entre los componentes NodeJS, DynamoDB y sistema de colas.
-- Estabilidad del sistema bajo carga.
-- Capacidad de recuperación ante fallos.
-- Seguridad básica del código y dependencias.
-- Correcto comportamiento tanto en escenarios exitosos como en escenarios de error.
+1. [Introducción](#1-introducción)
+2. [Objetivos de las pruebas](#2-objetivos-de-las-pruebas)
+3. [Alcance de las pruebas](#3-alcance-de-las-pruebas)
+4. [Estrategia de pruebas](#4-estrategia-de-pruebas)
+5. [Cronograma de las pruebas](#5-cronograma-de-las-pruebas)
+6. [Tipos de preubas](#6-tipos-de-pruebas)
+7. [Técnicas de diseño de pruebas](#7-técnicas-de-diseño-de-pruebas)
+8. [Entornos de prueba](#8-entornos-de-prueba)
+9. [Riesgos identificados](#9-riesgos-identificados)
+10. [Criterios de aceptación](#10-criterios-de-aceptación)
+11. [Escenarios de prueba](#11-escenarios-de-prueba)
+12. [Herramientas utilizadas](#12-herramientas-utilizadas)
+13. [Entregables](#13-entregables)
+
+
+# 1. Introducción
+
+El presente documento define el plan de pruebas para TicketFlow, una plataforma de gestión de incidentes desarrollada sobre infraestructura AWS utilizando NodeJS, DynamoDB y procesamiento asíncrono mediante colas.
+
+El objetivo de este plan es establecer una estrategia clara para validar el funcionamiento del sistema, garantizando estabilidad, integridad de datos y correcto comportamiento de los módulos principales.
+
+Las pruebas se enfocan principalmente en:
+
+* pruebas unitarias,
+* pruebas funcionales,
+* pruebas de integración.
 
 ---
 
-# 2. Alcance de las pruebas
+# 2. Objetivos de las pruebas
+
+Las pruebas tienen como objetivo validar que el sistema:
+
+* Permita registrar incidentes correctamente.
+* Procese incidentes críticos de forma automática.
+* Mantenga integridad de datos en DynamoDB.
+* Maneje errores de forma controlada.
+* Permita comunicación correcta entre API, base de datos y colas.
+* Mantenga estabilidad durante operaciones concurrentes básicas.
+* Responda correctamente ante entradas válidas e inválidas.
+
+---
+
+# 3. Alcance de las pruebas
+
+## Componentes incluidos
 
 Las pruebas cubrirán:
 
-- API REST desarrollada en NodeJS.
-- Persistencia de incidentes en DynamoDB.
-- Procesamiento asíncrono mediante colas.
-- Lógica de escalamiento de incidentes.
-- Validaciones de entradas y salidas.
-- Manejo de errores.
-- Rendimiento básico del sistema.
-- Resiliencia ante desconexión de servicios.
+* API REST desarrollada en NodeJS.
+* Persistencia de datos en DynamoDB.
+* Integración con sistema de colas.
+* Lógica de escalamiento de incidentes.
+* Validaciones de backend.
+* Manejo de errores.
+* Procesamiento de estados de incidentes.
 
-No se incluyen pruebas móviles ni pruebas de UI avanzadas.
 
----
+## Componentes no incluidos
 
-# 3. Cronograma de las pruebas
+No forman parte de este plan:
 
-| Fase | Actividad | Duración |
-|---|---|---|
-| Fase 1 | Preparación del entorno | 1 día |
-| Fase 2 | Desarrollo de pruebas unitarias | 2 días |
-| Fase 3 | Ejecución de pruebas funcionales | 2 días |
-| Fase 4 | Ejecución de pruebas de carga | 1 día |
-| Fase 5 | Ejecución de pruebas de seguridad | 1 día |
-| Fase 6 | Ejecución de pruebas de resiliencia | 1 día |
-| Fase 7 | Documentación de resultados | 1 día |
+* Pruebas móviles
+* Pruebas avanzadas de UX/UI
+* Pruebas de penetración completas
+* Pruebas avanzadas de infraestructura
+* Pruebas multi-región
 
 ---
 
-# 4. Tipos de pruebas
+# 4. Estrategia de pruebas
 
-## 4.1 Pruebas Unitarias
+La estrategia se divide en tres niveles principales:
 
-Pruebas enfocadas en validar funciones individuales del código NodeJS.
-
-Herramientas sugeridas:
-- Jest
-- Mocha
-- Chai
-
----
-
-## 4.2 Pruebas Funcionales
-
-Pruebas enfocadas en validar flujos completos del sistema.
-
-Herramientas sugeridas:
-- Postman
-- Newman
-- Supertest
+| Nivel de prueba        | Objetivo                              |
+| ---------------------- | ------------------------------------- |
+| Pruebas Unitarias      | Validar funciones individuales        |
+| Pruebas de Integración | Validar interacción entre componentes |
+| Pruebas Funcionales    | Validar flujos completos del sistema  |
 
 ---
 
-## 4.3 Pruebas de Carga
+# 5. Cronograma de las pruebas
 
-Pruebas orientadas a validar comportamiento bajo alto tráfico.
+## Enfoque
+Este cronograma cubre principalmente:
 
-Herramientas sugeridas:
-- k6
-- Artillery
-- Apache JMeter
+* Pruebas unitarias
+* Pruebas de integración
+* Pruebas funcionales
 
----
 
-## 4.4 Pruebas de Seguridad
-
-Pruebas orientadas a detectar vulnerabilidades y malas prácticas.
-
-Herramientas sugeridas:
-- SonarQube
-- npm audit
-- Snyk
-
----
-
-## 4.5 Pruebas de Resiliencia
-
-Pruebas orientadas a validar recuperación ante fallos de infraestructura.
-
-Herramientas sugeridas:
-- Docker Compose
-- AWS Console
-- Scripts manuales
+| Fase | Actividad | Tipo de prueba | Resultado esperado |
+|---|---|---|---|
+| Fase 1 | Validar funciones base del backend: creación de incidentes, validaciones y manejo de errores | Unitarias | Funciones principales probadas correctamente |
+| Fase 2 | Validar endpoints principales de la API: creación, consulta y actualización de incidentes | Funcionales | API responde correctamente a flujos básicos |
+| Fase 3 | Validar comunicación entre API, DynamoDB y entorno AWS | Integración | Persistencia correcta y comunicación estable |
+| Fase 4 | Validar envío de mensajes a cola y procesamiento inicial de incidentes críticos | Integración | Mensajes procesados correctamente |
+| Fase 5 | Validar escalamiento automático, cambios de estado y auditoría | Funcionales / Integración | Escalamiento y estados funcionando correctamente |
+| Fase 6 | Ejecutar regresión básica de pruebas unitarias, funcionales e integración | Unitarias / Funcionales / Integración | Sin errores críticos antes de entrega final |
+| Fase 7 | Consolidar evidencias, resultados y hallazgos de pruebas | Documentación QA | Evidencias organizadas para entrega |
+| Fase 8 | Revisión final del plan de pruebas y escenarios | Validación final | Documento listo para presentación |
+| Fase 9 | Presentar estrategia de pruebas y resultados obtenidos | Presentación | Explicación clara del proceso QA |
 
 ---
 
-# 5. Entornos de pruebas
 
-| Entorno | Descripción |
-|---|---|
-| Local | Ejecución desde la máquina del desarrollador |
-| AWS Dev | Instancia EC2 con acceso a DynamoDB y colas |
-| Docker Local | Simulación de servicios locales |
-| DynamoDB Local | Base de datos local para pruebas |
-| Queue Mock | Simulación de colas usando LocalStack o RabbitMQ |
+# 6. Tipos de pruebas
 
----
+# 6.1 Pruebas Unitarias
 
-# 6. Riesgos
+Las pruebas unitarias validan funciones internas del backend desarrollado en NodeJS.
 
-| Riesgo | Impacto |
-|---|---|
-| Fallos de conectividad con AWS | Alto |
-| Datos inconsistentes en DynamoDB | Alto |
-| Saturación de la cola de mensajes | Medio |
-| Fugas de memoria en NodeJS | Alto |
-| Vulnerabilidades en dependencias npm | Alto |
-| Tiempo de respuesta elevado bajo carga | Medio |
-| Fallo total de la base de datos | Alto |
+## Objetivos
 
----
+* Validar lógica de negocio.
+* Validar manejo de errores.
+* Verificar validaciones de datos.
+* Detectar fallos tempranos en funciones individuales.
 
-# 7. Criterios de aceptación
+## Herramientas
 
-## Entradas válidas
+* Jest
+* Supertest
 
-- Los incidentes deben contener:
-  - título
-  - descripción
-  - prioridad
-  - timestamp
-  - usuario creador
+## Componentes principales
 
-- Los datos deben cumplir validaciones de formato.
+* createIncident()
+* validateIncident()
+* escalationService()
+* queuePublisher()
 
----
 
-## Salidas esperadas
 
-- Respuestas HTTP correctas.
-- Persistencia correcta en DynamoDB.
-- Escalamiento exitoso del incidente.
-- Registro correcto en logs.
-- Manejo adecuado de errores.
-- No pérdida de mensajes en colas.
+# 6.2 Pruebas de Integración
 
----
+Las pruebas de integración validan la comunicación entre los componentes principales del sistema.
 
-# 8. Entregables
+## Integraciones a validar
 
-- Reporte de pruebas unitarias.
-- Reporte de pruebas funcionales.
-- Evidencia de pruebas de carga.
-- Reporte de SonarQube.
-- Logs de resiliencia.
-- Capturas de resultados.
-- Scripts de pruebas.
-- Documento final de resultados.
+* API REST ↔ DynamoDB
+* API REST ↔ Sistema de colas
+* Servicio de escalamiento ↔ Base de datos
 
----
+## Objetivos
 
-# 9. Casos de prueba
+* Validar persistencia correcta.
+* Validar procesamiento de mensajes.
+* Verificar sincronización de estados.
+* Detectar errores de comunicación entre servicios.
+
+
+# 6.3 Pruebas Funcionales
+
+Las pruebas funcionales validan el comportamiento completo del sistema desde la perspectiva del usuario.
+
+## Flujos principales
+
+* Registro de incidentes.
+* Consulta de incidentes.
+* Escalamiento automático.
+* Validación de errores.
+* Actualización de estados.
+
+## Herramientas
+
+* Postman
+* Newman
 
 ---
 
-# Prueba 1 – Registro exitoso de un incidente crítico
+# 7. Técnicas de diseño de pruebas
+
+# 7.1 Equivalence Partitioning
+
+Se utilizará para dividir entradas válidas e inválidas en grupos equivalentes.
+
+## Ejemplo
+
+Prioridades válidas:
+
+* Baja
+* Media
+* Alta
+* Crítica
+
+Prioridades inválidas:
+
+* Vacío
+* Null
+* Texto inválido
+
+
+# 7.2 Boundary Value Analysis
+
+Se utilizará para validar límites de entrada.
+
+## Ejemplo
+
+Cantidad máxima de caracteres:
+
+* 0 caracteres
+* 1 carácter
+* límite permitido
+* límite excedido
+
+
+# 7.3 Error Guessing
+
+Se utilizará experiencia previa para detectar errores comunes.
+
+## Casos típicos
+
+* JSON mal formado
+* Campos faltantes
+* IDs inválidos
+* Timeouts
+* Conexión perdida con DynamoDB
+
+# 7.4 State Transition Testing
+
+Se utilizará para validar cambios de estado de los incidentes.
+
+## Flujo esperado
+
+```text
+Nuevo → En Proceso → Escalado → Cerrado
+```
+
+---
+
+# 7.5 Decision Table Testing
+
+Se utilizará para validar reglas de negocio relacionadas con prioridad y escalamiento.
+
+| Prioridad | Tiempo excedido | Resultado  |
+| --------- | --------------- | ---------- |
+| Alta      | Sí              | Escalar    |
+| Alta      | No              | Mantener   |
+| Baja      | Sí              | Notificar  |
+| Baja      | No              | Sin acción |
+
+---
+
+# 8. Entornos de prueba
+
+| Entorno        | Descripción                   |
+| -------------- | ----------------------------- |
+| Local          | Desarrollo individual         |
+| Docker Local   | Simulación local de servicios |
+| AWS Dev        | Ambiente principal de pruebas |
+| DynamoDB Local | Persistencia local            |
+| Queue Mock     | Simulación de colas           |
+
+---
+
+# 9. Riesgos identificados
+
+| Riesgo                      | Impacto |
+| --------------------------- | ------- |
+| Caída de DynamoDB           | Alto    |
+| Pérdida de mensajes en cola | Alto    |
+| Saturación de API           | Medio   |
+| Vulnerabilidades npm        | Alto    |
+| Fallos de conectividad AWS  | Alto    |
+
+---
+
+# 10. Criterios de aceptación
+
+El sistema será considerado estable si:
+
+* Las pruebas unitarias alcanzan una cobertura mínima del 80%.
+* Las pruebas funcionales críticas son exitosas.
+* No existen errores HTTP 500 recurrentes.
+* Los incidentes se almacenan correctamente.
+* El sistema de escalamiento funciona correctamente.
+* No existen vulnerabilidades críticas en dependencias.
+
+---
+
+# 11. Escenarios de prueba
+
+
+# Escenario 1 – Registro exitoso de incidente crítico
 
 ## Tipo
+
 Prueba funcional
 
-## Objetivo
-Validar que un incidente pueda registrarse correctamente en el sistema y almacenarse en DynamoDB.
+## Técnica aplicada
 
-## Pre-condiciones
-- La API NodeJS debe estar en ejecución.
-- DynamoDB debe estar disponible.
-- El sistema de colas debe estar activo.
-- El endpoint `/incidents` debe estar accesible.
-- Debe existir conectividad entre EC2 y DynamoDB.
+Equivalence Partitioning
+
+## Objetivo
+
+Validar el registro correcto de un incidente crítico.
+
+## Precondiciones
+
+* API disponible.
+* DynamoDB operativo.
+* Cola habilitada.
 
 ## Pasos
-1. Enviar petición POST `/incidents`
-2. Enviar datos válidos:
-- título
-- descripción
-- prioridad crítica
-3. Validar respuesta HTTP.
+
+1. Enviar POST `/incidents`
+2. Ingresar datos válidos.
+3. Validar respuesta.
 
 ## Resultado esperado
-- HTTP 201 Created.
-- Incidente almacenado en DynamoDB.
-- Mensaje enviado correctamente a la cola.
-- Registro generado en logs.
+
+* HTTP 201 Created.
+* Incidente almacenado en DynamoDB.
+* Mensaje enviado correctamente a la cola.
 
 ---
 
-# Prueba 2 – Validación de error por campos obligatorios faltantes
+# Escenario 2 – Validación de campos obligatorios
 
 ## Tipo
+
 Prueba funcional
 
-## Objetivo
-Validar que el sistema rechace solicitudes incompletas.
+## Técnica aplicada
 
-## Pre-condiciones
-- La API debe estar funcionando.
-- El endpoint `/incidents` debe estar disponible.
-- Debe existir validación activa en backend.
+Boundary Value Analysis
+
+## Objetivo
+
+Validar rechazo de solicitudes incompletas.
+
+## Precondiciones
+
+* API activa.
+* Endpoint accesible.
 
 ## Pasos
+
 1. Enviar POST `/incidents`
 2. Omitir el campo prioridad.
 3. Revisar respuesta.
 
 ## Resultado esperado
-- HTTP 400 Bad Request.
-- Mensaje indicando el campo faltante.
-- El incidente no debe almacenarse.
-- No debe enviarse ningún mensaje a la cola.
+
+* HTTP 400 Bad Request.
+* Mensaje descriptivo del error.
+* No se almacena el incidente.
 
 ---
 
-# Prueba 3 – Escalamiento automático de incidentes de alta prioridad
+# Escenario 3 – Escalamiento automático de incidente crítico
 
 ## Tipo
-Prueba funcional
+
+Prueba de integración
+
+## Técnica aplicada
+
+Decision Table Testing
 
 ## Objetivo
-Validar que los incidentes críticos sean escalados automáticamente.
 
-## Pre-condiciones
-- Sistema de colas activo.
-- Servicio de procesamiento de incidentes habilitado.
-- DynamoDB operativo.
-- Configuración de reglas de escalamiento activa.
+Validar reglas de escalamiento automático.
+
+## Precondiciones
+
+* Servicio de colas activo.
+* Reglas de escalamiento habilitadas.
+* DynamoDB operativo.
 
 ## Pasos
-1. Crear incidente con prioridad crítica.
-2. Esperar procesamiento del mensaje.
+
+1. Crear incidente crítico.
+2. Esperar procesamiento.
 3. Consultar estado del incidente.
 
 ## Resultado esperado
-- El incidente cambia a estado “Escalado”.
-- Se genera evento de notificación.
-- Se registra auditoría del escalamiento.
+
+* Estado actualizado a “Escalado”.
+* Evento generado correctamente.
+* Registro almacenado en auditoría.
 
 ---
 
-# Prueba 4 – Validación unitaria de la función createIncident()
+# Escenario 4 – Validación unitaria de createIncident()
 
 ## Tipo
+
 Prueba unitaria
 
-## Objetivo
-Validar el correcto funcionamiento interno de la función encargada de crear incidentes.
+## Técnica aplicada
 
-## Pre-condiciones
-- Proyecto NodeJS instalado localmente.
-- Dependencias npm instaladas.
-- Framework Jest configurado.
-- Archivo de pruebas disponible.
-
-## Pasos
-1. Ejecutar suite de pruebas Jest.
-2. Simular entrada válida.
-3. Revisar resultado retornado.
-
-## Resultado esperado
-- La función retorna objeto válido.
-- Los atributos son correctos.
-- No se generan excepciones.
-
----
-
-# Prueba 5 – Validación unitaria de manejo de datos inválidos
-
-## Tipo
-Prueba unitaria
+Error Guessing
 
 ## Objetivo
-Validar que la función maneje correctamente entradas inválidas.
 
-## Pre-condiciones
-- Entorno NodeJS configurado.
-- Jest instalado.
-- Validaciones implementadas en el backend.
+Validar comportamiento interno de la función createIncident().
+
+## Precondiciones
+
+* Proyecto NodeJS configurado.
+* Jest instalado.
 
 ## Pasos
+
 1. Ejecutar prueba unitaria.
-2. Enviar objeto vacío a `createIncident()`.
-3. Capturar respuesta.
+2. Simular entrada válida.
+3. Revisar resultado.
 
 ## Resultado esperado
-- Se lanza excepción controlada.
-- Se devuelve mensaje descriptivo.
-- No ocurre fallo inesperado.
+
+* Retorno correcto de objeto.
+* Atributos válidos.
+* Sin excepciones inesperadas.
 
 ---
 
-# Prueba 6 – Simulación de tráfico concurrente elevado sobre la API
+# Escenario 5 – Validación de datos inválidos en createIncident()
 
 ## Tipo
-Prueba de carga
+
+Prueba unitaria
+
+## Técnica aplicada
+
+Error Guessing
 
 ## Objetivo
-Validar estabilidad del sistema bajo múltiples solicitudes concurrentes.
 
-## Pre-condiciones
-- API desplegada y accesible.
-- DynamoDB operativo.
-- Herramienta k6 instalada localmente.
-- Sistema de colas activo.
+Validar manejo de entradas inválidas.
+
+## Precondiciones
+
+* Entorno NodeJS operativo.
+* Validaciones implementadas.
 
 ## Pasos
-1. Ejecutar script k6.
-2. Generar 500 requests concurrentes.
-3. Monitorear métricas de respuesta.
+
+1. Ejecutar prueba.
+2. Enviar objeto vacío.
+3. Revisar excepción generada.
 
 ## Resultado esperado
-- La API permanece disponible.
-- Tiempo promedio menor a 2 segundos.
-- No existen errores masivos HTTP 500.
+
+* Excepción controlada.
+* Mensaje descriptivo.
+* Sin fallo inesperado.
 
 ---
 
-# Prueba 7 – Validación de procesamiento masivo en cola de mensajes
+# Escenario 6 – Persistencia correcta en DynamoDB
 
 ## Tipo
-Prueba de carga
+
+Prueba de integración
+
+## Técnica aplicada
+
+Equivalence Partitioning
 
 ## Objetivo
-Validar que el sistema procese correctamente múltiples incidentes simultáneamente.
 
-## Pre-condiciones
-- Sistema de colas habilitado.
-- Consumidores de mensajes activos.
-- DynamoDB operativo.
-- Logs habilitados.
+Validar almacenamiento correcto de incidentes.
+
+## Precondiciones
+
+* DynamoDB activo.
+* API conectada correctamente.
 
 ## Pasos
-1. Crear múltiples incidentes simultáneamente.
-2. Monitorear consumo de mensajes.
-3. Revisar estado final de incidentes.
+
+1. Crear incidente.
+2. Consultar registro en DynamoDB.
+3. Comparar datos almacenados.
 
 ## Resultado esperado
-- Todos los mensajes son procesados.
-- No existen pérdidas de mensajes.
-- El sistema mantiene estabilidad.
+
+* Persistencia correcta.
+* Datos íntegros.
+* Sin inconsistencias.
 
 ---
 
-# Prueba 8 – Análisis estático de seguridad utilizando SonarQube
+# Escenario 7 – Procesamiento correcto de mensajes en cola
 
 ## Tipo
-Prueba de seguridad
+
+Prueba de integración
+
+## Técnica aplicada
+
+State Transition Testing
 
 ## Objetivo
-Identificar vulnerabilidades y problemas de calidad en el código fuente.
 
-## Pre-condiciones
-- SonarQube instalado o disponible.
-- Proyecto NodeJS compilable.
-- Archivo de configuración SonarQube creado.
+Validar el flujo de procesamiento de mensajes.
+
+## Precondiciones
+
+* Cola habilitada.
+* Consumidores activos.
 
 ## Pasos
-1. Ejecutar análisis SonarQube.
-2. Revisar reporte generado.
-3. Analizar vulnerabilidades detectadas.
+
+1. Crear incidente crítico.
+2. Monitorear cola.
+3. Revisar estado final.
 
 ## Resultado esperado
-- No existen vulnerabilidades críticas.
-- Cobertura mínima de pruebas del 80%.
-- Sin code smells severos.
+
+* Mensaje procesado correctamente.
+* Estado actualizado.
+* Sin pérdida de mensajes.
 
 ---
 
-# Prueba 9 – Auditoría de dependencias vulnerables en NodeJS
+# Escenario 8 – Cambio de estados del incidente
 
 ## Tipo
-Prueba de seguridad
 
-## Objetivo
-Validar que las dependencias npm no contengan vulnerabilidades críticas.
-
-## Pre-condiciones
-- NodeJS instalado.
-- Dependencias descargadas.
-- Archivo `package.json` actualizado.
-
-## Pasos
-1. Ejecutar comando `npm audit`.
-2. Revisar resultados.
-3. Identificar vulnerabilidades.
-
-## Resultado esperado
-- Sin vulnerabilidades críticas.
-- Dependencias seguras y actualizadas.
-- Reporte limpio o con riesgos mínimos.
-
----
-
-# Prueba 10 – Validación de comportamiento ante pérdida de conexión con DynamoDB
-
-## Tipo
-Prueba de resiliencia
-
-## Objetivo
-Validar el comportamiento del sistema cuando la base de datos no está disponible.
-
-## Pre-condiciones
-- API en ejecución.
-- DynamoDB inicialmente conectado.
-- Acceso administrativo al entorno AWS o Docker.
-
-## Pasos
-1. Deshabilitar acceso a DynamoDB.
-2. Intentar crear incidente.
-3. Revisar logs y respuesta API.
-
-## Resultado esperado
-- El sistema responde con error controlado.
-- La API no colapsa.
-- El error queda registrado en logs.
-
----
-
-# Prueba 11 – Recuperación automática después de restaurar DynamoDB
-
-## Tipo
-Prueba de resiliencia
-
-## Objetivo
-Validar recuperación del sistema luego de restablecer la conexión a la base de datos.
-
-## Pre-condiciones
-- Haber ejecutado previamente la prueba de desconexión.
-- DynamoDB restaurado.
-- API aún operativa.
-
-## Pasos
-1. Restaurar conectividad con DynamoDB.
-2. Reintentar creación de incidente.
-3. Validar persistencia.
-
-## Resultado esperado
-- La API vuelve a responder correctamente.
-- Los incidentes se almacenan nuevamente.
-- No es necesario reiniciar el sistema.
-
----
-
-# Prueba 12 – Medición de tiempos de respuesta de la API REST
-
-## Tipo
 Prueba funcional
 
-## Objetivo
-Validar que la API responda dentro de tiempos aceptables.
+## Técnica aplicada
 
-## Pre-condiciones
-- API NodeJS desplegada.
-- DynamoDB operativo.
-- Sistema sin carga extrema.
-- Herramienta Postman o curl disponible.
+State Transition Testing
+
+## Objetivo
+
+Validar transiciones válidas de estado.
+
+## Flujo esperado
+
+```text
+Nuevo → En Proceso → Escalado → Cerrado
+```
 
 ## Pasos
-1. Ejecutar múltiples requests GET y POST.
-2. Medir tiempos de respuesta.
-3. Revisar resultados promedio.
+
+1. Crear incidente.
+2. Cambiar estados secuencialmente.
+3. Validar restricciones.
 
 ## Resultado esperado
-- Tiempo promedio menor a 500ms.
-- Respuestas consistentes.
-- Sin errores HTTP inesperados.
+
+* Transiciones válidas aceptadas.
+* Estados inválidos rechazados.
 
 ---
 
-# 10. Herramientas recomendadas
+# 12. Herramientas utilizadas
 
-| Herramienta | Uso |
-|---|---|
-| NodeJS | Backend |
-| Jest | Unit testing |
-| Postman | API testing |
-| Newman | Automatización |
-| k6 | Load testing |
-| SonarQube | Seguridad |
-| DynamoDB Local | Base local |
-| Docker | Simulación local |
-| AWS EC2 | Entorno de despliegue |
-| LocalStack | Simulación AWS |
+| Herramienta    | Uso                |
+| -------------- | ------------------ |
+| NodeJS         | Backend            |
+| Jest           | Unit testing       |
+| Supertest      | Testing API        |
+| Postman        | Functional testing |
+| Newman         | Automatización     |
+| DynamoDB Local | Persistencia local |
+| Docker         | Simulación local   |
+| AWS EC2        | Ambiente cloud     |
+| LocalStack     | Simulación AWS     |
 
 ---
+
+# 13. Entregables
+
+* Reporte de pruebas unitarias.
+* Evidencia de pruebas funcionales.
+* Evidencia de pruebas de integración.
+* Scripts Postman.
+* Logs de ejecución.
+* Capturas de resultados.
+* Documento final de resultados.
 
