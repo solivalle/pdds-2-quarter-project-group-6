@@ -1,5 +1,19 @@
 # Plan de Pruebas – TicketFlow
+---
 
+**Universidad Galileo**  
+Postgrado en Diseño y Desarrollo de Software  
+Testing para Software · Ciclo Mayo–Junio 2026
+
+**Equipo 6**  
+- Francisco Magdiel Asicona Mateo — 26006399  
+- Sergio Geovany García Smith — 25008130  
+- Sergio Rolando Oliva del Valle — 26005694
+
+**Fecha de entrega:** viernes 29 de mayo de 2026  
+**Versión del documento:** 1.0
+
+---
 ## Sistema de Gestión de Incidentes
 
 ## Tabla de Contenidos
@@ -579,4 +593,10 @@ Nuevo → En Proceso → Escalado → Cerrado
 * Logs de ejecución.
 * Capturas de resultados.
 * Documento final de resultados.
+
+
+# URL Repositorio
+
+[https://github.com/solivalle/pdds-2-quarter-project-group-6](https://github.com/solivalle/pdds-2-quarter-project-group-6)
+
 
