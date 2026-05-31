@@ -29,3 +29,13 @@ variable "vpc_id" {
   description = "VPC ID where the EC2 instance will be deployed"
   type        = string
 }
+
+variable "app_bucket_name" {
+  description = "app S3 bucket name"
+  type        = string
+}
+
+variable "app_bucket_id" {
+  description = "app S3 bucket ID (output from storage module)"
+  type        = string
+}

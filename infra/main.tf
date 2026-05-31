@@ -8,11 +8,20 @@ module "storage" {
   lifecycle_expire_days  = 365
 }
 
+module "app_bucket" {
+  source = "./modules/storage"
+
+  bucket_name = var.app_bucket_name
+  environment = var.environment
+}
+
 module "compute" {
   source = "./modules/compute"
 
   vpc_id              = var.vpc_id
   environment         = var.environment
+  app_bucket_name     = var.app_bucket_name
+  app_bucket_id       = module.app_bucket.bucket_id
   project_name        = var.project_name
   ami_id              = var.ami_id
   instance_type       = var.instance_type

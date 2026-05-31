@@ -1,7 +1,8 @@
-environment  = "dev"
-project_name = "pdds-2-quarter-project-group-6"
-bucket_name  = "pdds-2-quarter-project-group-6-s3"
-region       = "us-west-2"
+environment     = "dev"
+project_name    = "pdds-2-quarter-project-group-6"
+bucket_name     = "pdds-2-quarter-project-group-6-s3"
+app_bucket_name = "app-pdds-2-quarter-project-group-6-s3"
+region          = "us-west-2"
 allowed_cidr_blocks = [
   "0.0.0.0/0"
 ]

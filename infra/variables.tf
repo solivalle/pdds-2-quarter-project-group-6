@@ -19,6 +19,11 @@ variable "bucket_name" {
   type        = string
 }
 
+variable "app_bucket_name" {
+  description = "app S3 bucket name"
+  type        = string
+}
+
 variable "ami_id" {
   description = "AMI ID for the EC2 instance — region-specific, must match architecture"
   type        = string
