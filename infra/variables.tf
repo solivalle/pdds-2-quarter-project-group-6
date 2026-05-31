@@ -36,12 +36,28 @@ variable "instance_type" {
   default     = "t4g.nano"
 }
 
-variable "allowed_cidr_blocks" {
-  description = "CIDR blocks permitted to reach port 8080 on the instance"
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for public subnets — one per availability zone"
   type        = list(string)
 }
 
-variable "vpc_id" {
-  description = "VPC ID where the EC2 instance will be deployed"
+variable "private_subnet_cidrs" {
+  description = "CIDR blocks for private subnets — one per availability zone"
+  type        = list(string)
+}
+
+variable "availability_zones" {
+  description = "Availability zones to deploy subnets into — must match subnet CIDR count"
+  type        = list(string)
+}
+
+variable "name" {
+  description = "Base name applied to all ECS and ALB resources"
   type        = string
 }
