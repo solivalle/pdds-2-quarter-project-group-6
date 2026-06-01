@@ -181,3 +181,15 @@ infra/
 ```
 
 ---
+## Backend TicketFlow
+
+El backend Node.js/Express se encuentra en `backend/`.
+
+```bash
+cd backend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Documentación específica: `backend/README.md`.
