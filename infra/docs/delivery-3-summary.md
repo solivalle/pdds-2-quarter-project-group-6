@@ -290,52 +290,7 @@ El siguiente diagrama muestra los principales componentes del sistema y su ubica
 
 ## Diagrama Mermaid
 
-```mermaid
-flowchart TB
-
-    Internet([Internet])
-
-    subgraph AWS["AWS Account - us-west-2"]
-        
-        subgraph VPC["VPC 10.0.0.0/16"]
-
-            subgraph PublicA["Public Subnet A<br/>10.0.1.0/24<br/>us-west-2a"]
-                NAT["NAT Gateway"]
-                ALB["Application Load Balancer"]
-            end
-
-            subgraph PublicB["Public Subnet B<br/>10.0.2.0/24<br/>us-west-2b"]
-                ALB2["ALB Endpoint"]
-            end
-
-            subgraph PrivateA["Private Subnet A<br/>10.0.11.0/24<br/>us-west-2a"]
-                EC2["EC2 Instance<br/>Node.js Application<br/>Port 8080"]
-            end
-
-            subgraph PrivateB["Private Subnet B<br/>10.0.12.0/24<br/>us-west-2b"]
-                Reserved["Reserved for future scaling"]
-            end
-
-        end
-
-        S3App["S3 App Bucket<br/>project.zip"]
-        S3Data["S3 Storage Bucket<br/>Application Data"]
-        Dynamo["DynamoDB<br/>Tickets Table"]
-
-    end
-
-    Internet --> ALB
-    Internet --> ALB2
-
-    ALB --> EC2
-    ALB2 --> EC2
-
-    EC2 --> Dynamo
-    EC2 --> S3Data
-    EC2 --> S3App
-
-    EC2 --> NAT
-```
+![alt text](image.png)
 
 ## Componentes principales
 
@@ -419,45 +374,7 @@ Las subnets privadas alojan los componentes internos del sistema.
 
 # Diagrama de Red
 
-```mermaid
-flowchart TB
-
-    Internet([Internet])
-
-    subgraph VPC["VPC 10.0.0.0/16"]
-
-        subgraph PublicA["Public Subnet A - 10.0.1.0/24"]
-            ALB["Application Load Balancer"]
-            NAT["NAT Gateway"]
-        end
-
-        subgraph PublicB["Public Subnet B - 10.0.2.0/24"]
-            ALB2["ALB Endpoint"]
-        end
-
-        subgraph PrivateA["Private Subnet A - 10.0.11.0/24"]
-            EC2["EC2 Node.js Application"]
-        end
-
-        subgraph PrivateB["Private Subnet B - 10.0.12.0/24"]
-            Future["Future Compute Capacity"]
-        end
-
-    end
-
-    Dynamo["DynamoDB"]
-    S3["Amazon S3"]
-
-    Internet --> ALB
-    Internet --> ALB2
-
-    ALB --> EC2
-    ALB2 --> EC2
-
-    EC2 --> Dynamo
-    EC2 --> S3
-    EC2 --> NAT
-```
+![alt text](image-1.png)
 
 ---
 
