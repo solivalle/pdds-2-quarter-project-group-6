@@ -1,0 +1,7 @@
+alb_dns_name = "group-6-dev-alb-2074262196.us-west-2.elb.amazonaws.com"
+bucket_arn = "arn:aws:s3:::pdds-2-quarter-project-group-6-s3"
+bucket_name = "pdds-2-quarter-project-group-6-s3"
+compute_ec2_instance_id = "i-07a327b647d1276e6"
+database_table_arn = "arn:aws:dynamodb:us-west-2:245261108553:table/pdds-2-quarter-project-group-6-dev-tickets"
+database_table_name = "pdds-2-quarter-project-group-6-dev-tickets"
+instance_arn = "arn:aws:ec2:us-west-2:245261108553:instance/i-07a327b647d1276e6"
