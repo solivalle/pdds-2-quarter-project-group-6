@@ -167,3 +167,141 @@ resource "aws_security_group" "app" {
     Environment = var.environment
   }
 }
+
+# ── ACL ───────────────────────────────────────────────────────────
+
+resource "aws_network_acl" "public" {
+  vpc_id = aws_vpc.this.id
+
+  tags = {
+    Name        = "${var.environment}-public-nacl"
+    Environment = var.environment
+  }
+}
+
+resource "aws_network_acl" "private" {
+  vpc_id = aws_vpc.this.id
+
+  tags = {
+    Name        = "${var.environment}-private-nacl"
+    Environment = var.environment
+  }
+}
+
+# ── ACL relation ───────────────────────────────────────────────────────────
+
+resource "aws_network_acl_association" "public" {
+  count = length(aws_subnet.public)
+
+  subnet_id      = aws_subnet.public[count.index].id
+  network_acl_id = aws_network_acl.public.id
+}
+
+resource "aws_network_acl_association" "private" {
+  count = length(aws_subnet.private)
+
+  subnet_id      = aws_subnet.private[count.index].id
+  network_acl_id = aws_network_acl.private.id
+}
+
+# ── ACL Public Rules ───────────────────────────────────────────────────────────
+
+# ── Public Inbound ───────────────────────────────────────────────────────────
+
+resource "aws_network_acl_rule" "public_in_http" {
+  network_acl_id = aws_network_acl.public.id
+
+  rule_number = 100
+  egress      = false
+  protocol    = "tcp"
+  rule_action = "allow"
+
+  cidr_block = "0.0.0.0/0"
+
+  from_port = 80
+  to_port   = 80
+}
+
+resource "aws_network_acl_rule" "public_in_https" {
+  network_acl_id = aws_network_acl.public.id
+
+  rule_number = 110
+  egress      = false
+  protocol    = "tcp"
+  rule_action = "allow"
+
+  cidr_block = "0.0.0.0/0"
+
+  from_port = 443
+  to_port   = 443
+}
+
+resource "aws_network_acl_rule" "public_in_ephemeral" {
+  network_acl_id = aws_network_acl.public.id
+
+  rule_number = 120
+  egress      = false
+  protocol    = "tcp"
+  rule_action = "allow"
+
+  cidr_block = "0.0.0.0/0"
+
+  from_port = 1024
+  to_port   = 65535
+}
+
+# ── Private Inbound ───────────────────────────────────────────────────────────
+
+resource "aws_network_acl_rule" "private_in_app" {
+  network_acl_id = aws_network_acl.private.id
+
+  rule_number = 130
+  egress      = false
+  protocol    = "tcp"
+  rule_action = "allow"
+
+  cidr_block = var.vpc_cidr
+
+  from_port = 8080
+  to_port   = 8080
+}
+
+resource "aws_network_acl_rule" "private_in_ephemeral" {
+  network_acl_id = aws_network_acl.private.id
+
+  rule_number = 140
+  egress      = false
+  protocol    = "tcp"
+  rule_action = "allow"
+
+  cidr_block = "0.0.0.0/0"
+
+  from_port = 1024
+  to_port   = 65535
+}
+
+# ── Public Outbound ───────────────────────────────────────────────────────────
+
+resource "aws_network_acl_rule" "public_out_all" {
+  network_acl_id = aws_network_acl.public.id
+
+  rule_number = 150
+  egress      = true
+  protocol    = "-1"
+  rule_action = "allow"
+
+  cidr_block = "0.0.0.0/0"
+}
+
+# ── Private Outbound ───────────────────────────────────────────────────────────
+
+resource "aws_network_acl_rule" "private_out_all" {
+  network_acl_id = aws_network_acl.private.id
+
+  rule_number = 160
+  egress      = true
+  protocol    = "-1"
+  rule_action = "allow"
+
+  cidr_block = "0.0.0.0/0"
+}

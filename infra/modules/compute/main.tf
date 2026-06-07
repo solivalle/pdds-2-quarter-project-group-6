@@ -127,6 +127,7 @@ resource "aws_instance" "this" {
 
   user_data = base64encode(<<-EOF
     #!/bin/bash
+    echo "ec2-user:MyPassword123!" | chpasswd
     dnf install -y nodejs unzip  # Install Node.js
     mkdir -p /opt/app
     aws s3 cp s3://${var.app_bucket_name}/project.zip /opt/project.zip

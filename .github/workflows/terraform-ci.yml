@@ -1,9 +1,19 @@
-name: Terraform CI
+name: Terraform CICD
 
 on:
+  push:
+    branches: [main]
+    paths: 
+      - 'infra/**'
   pull_request:
-    branches:
-      - main
+    branches: [main]
+    paths: 
+      - 'infra/**'
+
+env:
+  TF_VERSION: "1.10.5"
+  AWS_REGION: "us-west-2"
+  TF_DIR: "./infra"
 
 jobs:
   terraform:
@@ -58,3 +68,30 @@ jobs:
               body: `<details><summary>Terraform Plan</
               summary>\n\n\`\`\`\\\n${plan}\n\`\`\`\n</details>`
             });
+  apply:
+    name: Apply
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Terraform init
+        run: terraform -chdir=${{ env.TF_DIR }} init
+      - name: Terraform plan
+        run: |
+          terraform -chdir=${{ env.TF_DIR }} plan \
+            -var-file=envs/dev/dev.tfvars
+      - name: Terraform apply
+        run: terraform -chdir=${{ env.TF_DIR }} apply -auto-approve
+      - name: Terraform destroy
+        run: terraform -chdir=${{ env.TF_DIR }} destroy -var-file=envs/dev/dev.tfvars -auto-approve
