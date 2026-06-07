@@ -1384,14 +1384,6 @@ Los mensajes intercambiados entre productores y consumidores siguen una estructu
 Los payloads mostrados representan únicamente los campos críticos para comprender el diseño de la arquitectura. En una implementación real podrían agregarse atributos adicionales relacionados con auditoría, trazabilidad y monitoreo.
 
 
-
-## 23. Preguntas Abiertas E4
-
-*(Se actualizará indicando las preguntas técnicas resueltas en esta entrega y cuáles quedan pendientes).*
-
----
-
-
 ## 22. Manejo de Fallos, DLQ e Idempotencia
 
 La arquitectura asíncrona de TicketFlow se diseña bajo el supuesto de que los fallos son inevitables. Los workers pueden experimentar errores temporales de red, interrupciones de servicios externos, problemas de validación de datos o fallos inesperados durante el procesamiento de mensajes. Por esta razón, todos los flujos asíncronos incorporan mecanismos de reintento, aislamiento de mensajes problemáticos e idempotencia para garantizar consistencia operacional.
@@ -1503,7 +1495,6 @@ Antes de ejecutar una acción crítica, cada worker verificará si el identifica
 | Report Worker | Generación repetida de reportes | Reutilizar resultados para solicitudes idénticas. |
 | Core Event Worker | Eventos de auditoría duplicados | Validar `eventId` antes de persistir historial. |
 
----
 
 ### 22.5 Manejo de Poison Messages
 
