@@ -1,3 +1,4 @@
+# Main Terraform configuration file for the project infrastructure
 module "network" {
   source = "./modules/network"
 
