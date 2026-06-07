@@ -9,6 +9,8 @@ module "network" {
   availability_zones   = var.availability_zones
 }
 
+#── VPC ───────────────────────────────────────────────────────────────────────
+# The VPC and subnets are created in the network module, which outputs the VPC
 module "ingress" {
   source = "./modules/ingress"
 
