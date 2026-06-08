@@ -92,7 +92,7 @@ jobs:
         run: |
           terraform -chdir=${{ env.TF_DIR }} plan \
             -var-file=envs/dev/dev.tfvars
-      - name: Terraform apply
-        run: terraform -chdir=${{ env.TF_DIR }} apply -var-file=envs/dev/dev.tfvars -auto-approve
-      - name: Terraform destroy
-        run: terraform -chdir=${{ env.TF_DIR }} destroy -var-file=envs/dev/dev.tfvars -auto-approve
+      # - name: Terraform apply
+      #   run: terraform -chdir=${{ env.TF_DIR }} apply -var-file=envs/dev/dev.tfvars -auto-approve
+      # - name: Terraform destroy
+      #   run: terraform -chdir=${{ env.TF_DIR }} destroy -var-file=envs/dev/dev.tfvars -auto-approve

@@ -33,6 +33,8 @@ module "storage" {
   lifecycle_expire_days  = 365
 }
 
+#── Compute and Database ─────────────────────────────────────────────────────
+# The compute and database modules create the EC2 instance and DynamoDB table, respectively, and
 module "app_bucket" {
   source = "./modules/storage"
 
