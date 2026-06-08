@@ -2,3 +2,6 @@
 .idea/
 .vscode/
 *.log
+.env
+.npm-cache/
+infra/tmp/*.zip

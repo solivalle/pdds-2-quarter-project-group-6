@@ -1,0 +1,41 @@
+{
+  "data": [
+    {
+      "suggestedPriority": "P2",
+      "sla": {
+        "resolutionMinutes": 2880,
+        "isAtRisk": true,
+        "responseDueAt": "2026-06-01T16:00:00.000Z",
+        "responseMinutes": 240,
+        "isBreached": true,
+        "resolutionDueAt": "2026-06-03T12:00:00.000Z",
+        "escalatedAt": "2026-06-08T04:30:00.202Z"
+      },
+      "status": "ASSIGNED",
+      "comments": [],
+      "priority": "P2",
+      "createdAt": "2026-06-01T12:00:00.000Z",
+      "attachments": [],
+      "teamId": "support-core",
+      "escalated": true,
+      "requesterId": "USR-1001",
+      "updatedAt": "2026-06-01T12:00:00.000Z",
+      "category": "infraestructura",
+      "auditLog": [
+        {
+          "reason": "Terraform seed for E2E validation",
+          "actorId": "SYSTEM",
+          "at": "2026-06-01T12:00:00.000Z",
+          "id": "AUD-SEED-E2E",
+          "type": "TICKET_CREATED"
+        }
+      ],
+      "description": "Ticket de prueba creado por Terraform para validar lectura desde DynamoDB.",
+      "CreatedAt": "2026-06-01T12:00:00.000Z",
+      "title": "Ticket semilla para prueba E2E",
+      "id": "TKT-SEED-E2E",
+      "assignedAgentId": "AGE-2002",
+      "ttlEpochSeconds": 1811841600
+    }
+  ]
+}

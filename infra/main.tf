@@ -45,7 +45,6 @@ module "app_bucket" {
 module "compute" {
   source = "./modules/compute"
 
-  vpc_id                  = module.network.vpc_id
   subnet_id               = module.network.private_subnet_ids[0]
   environment             = var.environment
   app_bucket_name         = var.app_bucket_name
@@ -54,7 +53,8 @@ module "compute" {
   project_name            = var.project_name
   ami_id                  = var.ami_id
   instance_type           = var.instance_type
-  web_sg_id               = module.network.web_sg_id
+  app_sg_id               = module.network.app_sg_id
+  aws_region              = var.region
   aws_lb_target_group_arn = module.ingress.aws_lb_target_group_arn
   table_arn               = module.database.table_arn
   table_name              = module.database.table_name
