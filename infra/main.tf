@@ -22,6 +22,7 @@ module "ingress" {
 }
 
 #── Security Groups ───────────────────────────────────────────────────────────
+# The security groups are created in the network module, which outputs their IDs for use in the ingress and compute modules
 module "storage" {
   source = "./modules/storage"
 
