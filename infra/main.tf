@@ -21,6 +21,7 @@ module "ingress" {
   web_sg_id         = module.network.web_sg_id
 }
 
+#── Security Groups ───────────────────────────────────────────────────────────
 module "storage" {
   source = "./modules/storage"
 
