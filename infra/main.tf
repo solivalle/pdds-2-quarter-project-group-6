@@ -34,7 +34,7 @@ module "storage" {
 }
 
 #── Compute and Database ─────────────────────────────────────────────────────
-# The compute and database modules create the EC2 instance and DynamoDB table, respectively, and
+# The compute and database modules create the EC2 instance and DynamoDB table, respectively, and output their identifiers for use in the outputs.tf file
 module "app_bucket" {
   source = "./modules/storage"
 
