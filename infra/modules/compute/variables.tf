@@ -20,12 +20,47 @@ variable "instance_type" {
   default     = "t4g.nano"
 }
 
-variable "allowed_cidr_blocks" {
-  description = "CIDR blocks permitted to reach port 8080 on the instance"
-  type        = list(string)
-}
-
 variable "vpc_id" {
   description = "VPC ID where the EC2 instance will be deployed"
+  type        = string
+}
+
+variable "app_bucket_name" {
+  description = "app S3 bucket name"
+  type        = string
+}
+
+variable "storage_bucket_name" {
+  description = "S3 bucket name for storage"
+  type        = string
+}
+
+variable "app_bucket_id" {
+  description = "app S3 bucket ID (output from storage module)"
+  type        = string
+}
+
+variable "subnet_id" {
+  description = "Subnet where EC2 will be deployed"
+  type        = string
+}
+
+variable "web_sg_id" {
+  description = "Security group ID of the ALB — passed to compute_ecs to allow ingress on port 8080"
+  type        = string
+}
+
+variable "aws_lb_target_group_arn" {
+  description = "ARN of the ALB target group — passed to the compute module for ECS service registration"
+  type        = string
+}
+
+variable "table_arn" {
+  description = "ARN of the DynamoDB table — passed to the compute module for IAM policy"
+  type        = string
+}
+
+variable "table_name" {
+  description = "The name of the DynamoDB table"
   type        = string
 }

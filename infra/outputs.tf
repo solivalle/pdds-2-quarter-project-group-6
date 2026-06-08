@@ -13,11 +13,6 @@ output "compute_ec2_instance_id" {
   value       = module.compute.instance_id
 }
 
-output "compute_ec2_public_ip" {
-  description = "The public IP address of the EC2 instance created by the compute_ec2 module."
-  value       = module.compute.public_ip
-}
-
 output "instance_arn" {
   description = "EC2 instance ARN"
   value       = module.compute.instance_arn
@@ -31,4 +26,9 @@ output "database_table_name" {
 output "database_table_arn" {
   description = "DynamoDB table ARN"
   value       = module.database.table_arn
+}
+
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer — the public endpoint for the service"
+  value       = module.ingress.alb_dns_name
 }
