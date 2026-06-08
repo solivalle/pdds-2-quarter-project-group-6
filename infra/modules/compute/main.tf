@@ -17,8 +17,31 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 
 data "archive_file" "app" {
   type        = "zip"
-  source_dir  = "${path.module}/../../app"
   output_path = "${path.module}/../../tmp/project.zip"
+
+  source {
+    content  = file("${local.backend_dir}/package.json")
+    filename = "package.json"
+  }
+
+  source {
+    content  = file("${local.backend_dir}/package-lock.json")
+    filename = "package-lock.json"
+  }
+
+  dynamic "source" {
+    for_each = fileset(local.backend_dist_dir, "**")
+
+    content {
+      content  = file("${local.backend_dist_dir}/${source.value}")
+      filename = "dist/${source.value}"
+    }
+  }
+}
+
+locals {
+  backend_dir      = abspath("${path.module}/../../../backend")
+  backend_dist_dir = "${local.backend_dir}/dist"
 }
 
 resource "aws_s3_object" "project" {
@@ -94,31 +117,11 @@ resource "aws_iam_role_policy" "dynamodb_access" {
   })
 }
 
-resource "aws_security_group" "instance" {
-  name        = "${var.project_name}-${var.environment}-sg"
-  description = "Security group for EC2 instances"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [var.web_sg_id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 resource "aws_instance" "this" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   iam_instance_profile   = aws_iam_instance_profile.this.name
-  vpc_security_group_ids = [aws_security_group.instance.id]
+  vpc_security_group_ids = [var.app_sg_id]
   subnet_id              = var.subnet_id
 
   depends_on = [
@@ -126,16 +129,50 @@ resource "aws_instance" "this" {
   ]
 
   user_data = base64encode(<<-EOF
-    #!/bin/bash
-    echo "ec2-user:MyPassword123!" | chpasswd
-    dnf install -y nodejs unzip  # Install Node.js
-    mkdir -p /opt/app
-    aws s3 cp s3://${var.app_bucket_name}/project.zip /opt/project.zip
-    unzip -o /opt/project.zip -d /opt/app
-    export STORAGE_BUCKET=${var.storage_bucket_name}
-    export DYNAMODB_TABLE=${var.table_name}
-    COMPUTE_TYPE=ec2 nohup node /opt/app/index.js &  
-  EOF
+#!/bin/bash
+set -euxo pipefail
+exec > >(tee /var/log/ticketflow-user-data.log | logger -t ticketflow-user-data -s 2>/dev/console) 2>&1
+
+dnf install -y nodejs20 nodejs20-npm unzip awscli
+
+rm -rf /opt/ticketflow
+mkdir -p /opt/ticketflow
+aws s3 cp s3://${var.app_bucket_name}/project.zip /opt/ticketflow/project.zip
+unzip -q -o /opt/ticketflow/project.zip -d /opt/ticketflow
+rm -f /opt/ticketflow/project.zip
+
+cd /opt/ticketflow
+npm install --omit=dev
+chown -R ec2-user:ec2-user /opt/ticketflow
+
+cat >/etc/systemd/system/ticketflow.service <<'SERVICE'
+[Unit]
+Description=TicketFlow backend API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/ticketflow
+ExecStart=/usr/bin/node dist/main.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=8080
+Environment=AWS_REGION=${var.aws_region}
+Environment=DATA_STORE=dynamodb
+Environment=ATTACHMENT_STORE=s3
+Environment=DYNAMODB_TICKETS_TABLE=${var.table_name}
+Environment=S3_ATTACHMENTS_BUCKET=${var.storage_bucket_name}
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+systemctl daemon-reload
+systemctl enable --now ticketflow.service
+EOF
   )
 
   tags = {

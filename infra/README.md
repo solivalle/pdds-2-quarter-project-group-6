@@ -157,6 +157,79 @@ Status: 200 OK
 
 ---
 
+### 3.4 Deliverable D - End-to-End Connectivity Proof
+
+The E2E proof was executed exclusively through the Application Load Balancer:
+
+```text
+http://group-6-dev-alb-604111303.us-west-2.elb.amazonaws.com
+```
+
+The `GET /api/v1/tickets` endpoint reads the Terraform-managed seed ticket from DynamoDB. The `POST /api/v1/tickets/TKT-SEED-E2E/attachments` endpoint uploads a multipart attachment to the S3 attachments bucket and returns the generated object key.
+
+**GET Output** (`infra/evidence/e2e-get.txt`):
+
+```json
+{
+  "data": [
+    {
+      "suggestedPriority": "P2",
+      "sla": {
+        "resolutionMinutes": 2880,
+        "isAtRisk": true,
+        "responseDueAt": "2026-06-01T16:00:00.000Z",
+        "responseMinutes": 240,
+        "isBreached": true,
+        "resolutionDueAt": "2026-06-03T12:00:00.000Z",
+        "escalatedAt": "2026-06-08T04:30:00.202Z"
+      },
+      "status": "ASSIGNED",
+      "comments": [],
+      "priority": "P2",
+      "createdAt": "2026-06-01T12:00:00.000Z",
+      "attachments": [],
+      "teamId": "support-core",
+      "escalated": true,
+      "requesterId": "USR-1001",
+      "updatedAt": "2026-06-01T12:00:00.000Z",
+      "category": "infraestructura",
+      "description": "Ticket de prueba creado por Terraform para validar lectura desde DynamoDB.",
+      "title": "Ticket semilla para prueba E2E",
+      "id": "TKT-SEED-E2E",
+      "assignedAgentId": "AGE-2002",
+      "ttlEpochSeconds": 1811841600
+    }
+  ]
+}
+```
+
+**POST Output** (`infra/evidence/e2e-post.txt`):
+
+```json
+{
+  "data": {
+    "id": "TKT-SEED-E2E",
+    "attachments": [
+      {
+        "id": "ATT-f1119872",
+        "fileName": "ticketflow-e2e.txt",
+        "mimeType": "text/plain",
+        "sizeBytes": 20,
+        "storageKey": "tickets/TKT-SEED-E2E/1780893071837-ticketflow-e2e.txt",
+        "uploadedBy": "USR-1001",
+        "uploadedAt": "2026-06-08T04:31:11.924Z"
+      }
+    ]
+  }
+}
+```
+
+**S3 Object Screenshot**:
+
+![E2E Storage Object](evidence/e2e-storage.png)
+
+---
+
 ### 3.5 Deliverable E - CI Pipeline Integration
 
 Automated Terraform planning integrated into the CI/CD pipeline via GitHub Actions:

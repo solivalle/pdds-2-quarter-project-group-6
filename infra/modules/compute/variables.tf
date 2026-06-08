@@ -20,11 +20,6 @@ variable "instance_type" {
   default     = "t4g.nano"
 }
 
-variable "vpc_id" {
-  description = "VPC ID where the EC2 instance will be deployed"
-  type        = string
-}
-
 variable "app_bucket_name" {
   description = "app S3 bucket name"
   type        = string
@@ -45,8 +40,13 @@ variable "subnet_id" {
   type        = string
 }
 
-variable "web_sg_id" {
-  description = "Security group ID of the ALB — passed to compute_ecs to allow ingress on port 8080"
+variable "app_sg_id" {
+  description = "Security group ID for EC2 instances — allows port 8080 from the ALB web security group"
+  type        = string
+}
+
+variable "aws_region" {
+  description = "AWS region used by the backend SDK clients"
   type        = string
 }
 
