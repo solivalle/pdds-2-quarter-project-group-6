@@ -154,3 +154,17 @@ Status: 200 OK
 **Load Balancer / Ingress Health Status Screenshot**:
 
 ![Ingress Healthy Targets](evidence/ingress-healthy.png)
+
+---
+
+### 3.5 Deliverable E - CI Pipeline Integration
+
+Automated Terraform planning integrated into the CI/CD pipeline via GitHub Actions:
+
+**Pull Request with Plan-on-PR Workflow**:
+
+The `plan-on-PR` workflow was successfully executed on [Pull Request #16](https://github.com/solivalle/pdds-2-quarter-project-group-6/pull/16), automatically running `terraform plan` and posting the networking infrastructure plan as a comment for review before deployment.
+
+**CI Pipeline Workflow Run Screenshot**:
+
+![CI Plan Workflow](evidence/ci-plan.png)
