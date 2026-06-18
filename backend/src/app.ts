@@ -1,6 +1,8 @@
 import cors from 'cors';
 import express from 'express';
+import { existsSync } from 'fs';
 import helmet from 'helmet';
+import path from 'path';
 import pinoHttp from 'pino-http';
 import { env } from './config/env';
 import { logger } from './config/logger';
@@ -34,8 +36,29 @@ export function createApp(services: AppServices): express.Express {
   api.use('/notifications', notificationRoutes(services.notifications));
 
   app.use(env.API_PREFIX, api);
+  serveFrontend(app);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
   return app;
+}
+
+function serveFrontend(app: express.Express): void {
+  const frontendDistDir = path.resolve(env.FRONTEND_DIST_DIR);
+  const indexPath = path.join(frontendDistDir, 'index.html');
+
+  if (!existsSync(indexPath)) {
+    logger.warn({ frontendDistDir }, 'Frontend build not found; serving API only');
+    return;
+  }
+
+  app.use(express.static(frontendDistDir, { index: false }));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith(env.API_PREFIX) || req.path === '/health' || !req.accepts('html')) {
+      next();
+      return;
+    }
+
+    res.sendFile(indexPath);
+  });
 }

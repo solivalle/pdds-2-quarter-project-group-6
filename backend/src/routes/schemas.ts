@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { ticketPriorities, ticketStatuses } from '../domain/enums';
 
+const booleanQuery = z.preprocess((value) => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+}, z.boolean());
+
 export const loginSchema = z.object({
   body: z.object({
     email: z.string().email(),
@@ -35,8 +41,8 @@ export const listTicketsSchema = z.object({
     priority: z.enum(ticketPriorities).optional(),
     status: z.enum(ticketStatuses).optional(),
     category: z.string().optional(),
-    slaAtRisk: z.coerce.boolean().optional(),
-    includeClosed: z.coerce.boolean().optional(),
+    slaAtRisk: booleanQuery.optional(),
+    includeClosed: booleanQuery.optional(),
     from: z.string().datetime().optional(),
     to: z.string().datetime().optional()
   })
