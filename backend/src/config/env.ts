@@ -3,6 +3,12 @@ import { z } from 'zod';
 
 dotenv.config();
 
+const booleanEnv = z.preprocess((value) => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+}, z.boolean());
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(8080),
@@ -17,8 +23,9 @@ const envSchema = z.object({
   ATTACHMENT_STORE: z.enum(['local', 's3']).default('local'),
   S3_ATTACHMENTS_BUCKET: z.string().default('ticketflow-dev-attachments'),
   LOCAL_ATTACHMENTS_DIR: z.string().default('./uploads'),
+  FRONTEND_DIST_DIR: z.string().default('./public'),
   SLA_JOB_CRON: z.string().default('*/5 * * * *'),
-  SLA_JOB_ENABLED: z.coerce.boolean().default(true),
+  SLA_JOB_ENABLED: booleanEnv.default(true),
   BUSINESS_HOURS_START: z.string().regex(/^\d{2}:\d{2}$/).default('08:00'),
   BUSINESS_HOURS_END: z.string().regex(/^\d{2}:\d{2}$/).default('18:00'),
   BUSINESS_TIMEZONE: z.string().default('America/Guatemala'),
