@@ -7,6 +7,9 @@ module "network" {
   public_subnet_cidrs  = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
   availability_zones   = var.availability_zones
+  ingress_port         = var.ingress_port
+  private_port         = var.private_port
+  default_port         = var.default_port
 }
 
 #── VPC ───────────────────────────────────────────────────────────────────────
@@ -19,6 +22,10 @@ module "ingress" {
   vpc_id            = module.network.vpc_id
   public_subnet_ids = module.network.public_subnet_ids
   web_sg_id         = module.network.web_sg_id
+  default_port      = var.default_port
+  ingress_port      = var.ingress_port
+  private_port      = var.private_port
+  health_check_path = var.health_check_path
 }
 
 #── Security Groups ───────────────────────────────────────────────────────────
@@ -58,6 +65,7 @@ module "compute" {
   aws_lb_target_group_arn = module.ingress.aws_lb_target_group_arn
   table_arn               = module.database.table_arn
   table_name              = module.database.table_name
+  default_port            = var.default_port
 }
 
 module "database" {

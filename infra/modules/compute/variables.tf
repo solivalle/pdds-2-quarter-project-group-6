@@ -64,3 +64,9 @@ variable "table_name" {
   description = "The name of the DynamoDB table"
   type        = string
 }
+
+variable "default_port" {
+  description = "Default port for the application"
+  type        = number
+  default     = 8080
+}

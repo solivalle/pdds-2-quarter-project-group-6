@@ -117,15 +117,15 @@ resource "aws_security_group" "web" {
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = var.ingress_port
+    to_port     = var.ingress_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port   = 443
-    to_port     = 443
+    from_port   = var.private_port
+    to_port     = var.private_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -149,10 +149,10 @@ resource "aws_security_group" "app" {
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    from_port       = 8080
-    to_port         = 8080
+    from_port       = var.default_port
+    to_port         = var.default_port
     protocol        = "tcp"
-    security_groups = [aws_security_group.web.id]
+    security_groups = [aws_security_group.app.id]
   }
 
   egress {
@@ -218,8 +218,8 @@ resource "aws_network_acl_rule" "public_in_http" {
 
   cidr_block = "0.0.0.0/0"
 
-  from_port = 80
-  to_port   = 80
+  from_port = var.ingress_port
+  to_port   = var.ingress_port
 }
 
 resource "aws_network_acl_rule" "public_in_https" {
@@ -232,8 +232,8 @@ resource "aws_network_acl_rule" "public_in_https" {
 
   cidr_block = "0.0.0.0/0"
 
-  from_port = 443
-  to_port   = 443
+  from_port = var.private_port
+  to_port   = var.private_port
 }
 
 resource "aws_network_acl_rule" "public_in_ephemeral" {
@@ -262,8 +262,8 @@ resource "aws_network_acl_rule" "private_in_app" {
 
   cidr_block = var.vpc_cidr
 
-  from_port = 8080
-  to_port   = 8080
+  from_port = var.default_port
+  to_port   = var.default_port
 }
 
 resource "aws_network_acl_rule" "private_in_ephemeral" {

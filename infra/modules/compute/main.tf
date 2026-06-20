@@ -184,5 +184,5 @@ EOF
 resource "aws_lb_target_group_attachment" "app" {
   target_group_arn = var.aws_lb_target_group_arn
   target_id        = aws_instance.this.id
-  port             = 8080
+  port             = var.default_port
 }

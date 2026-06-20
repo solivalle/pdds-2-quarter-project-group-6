@@ -10,3 +10,7 @@ public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
 private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
 availability_zones   = ["us-west-2a", "us-west-2b"]
 name                 = "group-6"
+default_port         = 8080
+ingress_port         = 80
+private_port         = 443
+health_check_path    = "/health"
