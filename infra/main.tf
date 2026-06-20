@@ -49,6 +49,16 @@ module "app_bucket" {
   environment = var.environment
 }
 
+module "tickets_queue" {
+  source = "./modules/async"
+
+  queue_name                 = var.queue_name
+  max_receive_count          = var.max_receive_count
+  message_retention_seconds  = var.message_retention_seconds
+  visibility_timeout_seconds = var.visibility_timeout_seconds
+  environment                = var.environment
+}
+
 module "compute" {
   source = "./modules/compute"
 
@@ -66,6 +76,8 @@ module "compute" {
   table_arn               = module.database.table_arn
   table_name              = module.database.table_name
   default_port            = var.default_port
+  queue_url               = module.tickets_queue.queue_url
+  dlq_url                 = module.tickets_queue.dlq_url
 }
 
 module "database" {
@@ -77,14 +89,4 @@ module "database" {
 
 resource "time_sleep" "lock_demo" {
   create_duration = "20s"
-}
-
-module "tickets_queue" {
-  source = "./modules/async"
-
-  queue_name                 = var.queue_name
-  max_receive_count          = var.max_receive_count
-  message_retention_seconds  = var.message_retention_seconds
-  visibility_timeout_seconds = var.visibility_timeout_seconds
-  environment                = var.environment
 }

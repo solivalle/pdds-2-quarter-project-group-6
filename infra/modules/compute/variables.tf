@@ -70,3 +70,13 @@ variable "default_port" {
   type        = number
   default     = 8080
 }
+
+variable "queue_url" {
+  description = "SQS main queue URL — used by the application to enqueue messages"
+  type        = string
+}
+
+variable "dlq_url" {
+  description = "Dead letter queue URL"
+  type        = string
+}

@@ -165,6 +165,8 @@ Environment=DATA_STORE=dynamodb
 Environment=ATTACHMENT_STORE=s3
 Environment=DYNAMODB_TICKETS_TABLE=${var.table_name}
 Environment=S3_ATTACHMENTS_BUCKET=${var.storage_bucket_name}
+Environment=QUEUE_URL=${var.queue_url}
+Environment=DLQ_URL=${var.dlq_url}
 
 [Install]
 WantedBy=multi-user.target
