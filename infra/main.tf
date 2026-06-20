@@ -78,3 +78,13 @@ module "database" {
 resource "time_sleep" "lock_demo" {
   create_duration = "20s"
 }
+
+module "tickets_queue" {
+  source = "./modules/async"
+
+  queue_name                 = var.queue_name
+  max_receive_count          = var.max_receive_count
+  message_retention_seconds  = var.message_retention_seconds
+  visibility_timeout_seconds = var.visibility_timeout_seconds
+  environment                = var.environment
+}
