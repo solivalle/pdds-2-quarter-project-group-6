@@ -20,13 +20,48 @@ env:
   TF_DIR: "./infra"
 
 jobs:
-  terraform:
-    name: Validate and plan
+  terraform_fmt:
+    name: Terraform fmt
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
     if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Build backend artifact
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.8"
+
+      - name: Terraform fmt
+        run: terraform fmt --check -recursive
+        working-directory: infra
+
+  terraform_validate:
+    name: Terraform validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request'
+    needs: terraform_fmt
 
     steps:
       - name: Checkout code
@@ -57,16 +92,54 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Terraform Format Check
-        run: terraform fmt --check -recursive
-        working-directory: infra
-
-      - name: Terraform Init
+      - name: Terraform init
         run: terraform init
         working-directory: infra
 
-      - name: Terraform Validate
+      - name: Terraform validate
         run: terraform validate
+        working-directory: infra
+
+  terraform_plan_pr:
+    name: Terraform plan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request'
+    needs: terraform_validate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Build backend artifact
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.8"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init
         working-directory: infra
 
       - name: Terraform plan
@@ -100,7 +173,7 @@ jobs:
 
   dev_apply:
     name: Dev apply
-    needs: terraform
+    needs: terraform_plan_pr
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: dev
     runs-on: ubuntu-latest
