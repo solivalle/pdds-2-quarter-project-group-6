@@ -80,6 +80,29 @@ module "compute" {
   dlq_url                 = module.tickets_queue.dlq_url
 }
 
+module "compute_lambda" {
+  source = "./modules/compute_lambda"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  alb_dns_name      = module.ingress.alb_dns_name
+  health_check_path = var.health_check_path
+  architecture      = var.architecture
+  memory_size       = var.memory_size
+}
+
+module "scheduler" {
+  source = "./modules/scheduler"
+
+  environment = var.environment
+
+  schedule_expression = var.schedule_expression
+  scheduler_timezone  = var.scheduler_timezone
+
+  target_lambda_arn  = module.compute_lambda.lambda_arn
+  target_lambda_name = module.compute_lambda.lambda_function_name
+}
+
 module "database" {
   source = "./modules/database"
 
@@ -90,3 +113,4 @@ module "database" {
 resource "time_sleep" "lock_demo" {
   create_duration = "20s"
 }
+

@@ -108,3 +108,25 @@ variable "visibility_timeout_seconds" {
   description = "Visibility timeout for the main queue in seconds"
   type        = number
 }
+
+variable "memory_size" {
+  description = "Memory allocated to the Lambda function in MB (min 128)"
+  type        = number
+  default     = 128
+}
+
+variable "architecture" {
+  description = "CPU architecture for the Lambda function (x86_64 or arm64)"
+  type        = string
+  default     = "arm64"
+}
+
+variable "schedule_expression" {
+  description = "Cron expression for the scheduler"
+  type        = string
+}
+
+variable "scheduler_timezone" {
+  description = "Timezone for the scheduler"
+  type        = string
+}
