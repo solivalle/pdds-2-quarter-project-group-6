@@ -78,7 +78,7 @@ jobs:
         working-directory: infra
 
       - name: Upload tfplan-dev artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tfplan-dev
           path: infra/tfplan-dev
@@ -111,7 +111,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download tfplan-dev artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: tfplan-dev
           path: infra
@@ -198,7 +198,7 @@ jobs:
         working-directory: infra
 
       - name: Upload tfplan-prod artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tfplan-prod
           path: infra/tfplan-prod
@@ -216,7 +216,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download tfplan-prod artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: tfplan-prod
           path: infra
