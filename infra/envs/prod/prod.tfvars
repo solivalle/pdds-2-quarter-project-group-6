@@ -19,6 +19,6 @@ max_receive_count          = 3
 message_retention_seconds  = 86400
 visibility_timeout_seconds = 30
 architecture               = "arm64"
-memory_size                = 128
+memory_size                = 256
 schedule_expression        = "rate(5 minutes)"
 scheduler_timezone         = "America/Guatemala"
