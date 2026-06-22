@@ -20,12 +20,13 @@ env:
   TF_DIR: "./infra"
 
 jobs:
-  terraform:
+  terraform_fmt:
+    name: Terraform fmt
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     permissions:
       contents: read
       pull-requests: write
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     steps:
       - name: Checkout code
@@ -47,7 +48,45 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "~> 1.8"
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform fmt
+        run: terraform fmt --check -recursive
+        working-directory: infra
+
+  terraform_validate:
+    name: Terraform validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: terraform_fmt
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Build backend artifact
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,23 +95,90 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Terraform Format Check
-        run: terraform fmt --check -recursive
-        working-directory: infra
-
-      - name: Terraform Init
+      - name: Terraform init
         run: terraform init
         working-directory: infra
 
-      - name: Terraform Validate
+      - name: Select dev workspace
+        run: terraform workspace select dev || terraform workspace new dev
+        working-directory: infra
+
+      - name: Terraform validate
         run: terraform validate
         working-directory: infra
 
-      - name: Terraform plan
-        run: terraform plan -var-file=envs/dev/dev.tfvars -no-color 2>&1 | tee plan.txt
+  terraform_plan_pr:
+    name: Terraform plan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: terraform_validate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Build backend artifact
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init
         working-directory: infra
 
+      - name: Select dev workspace
+        run: terraform workspace select dev || terraform workspace new dev
+        working-directory: infra
+
+      - name: Terraform plan
+        run: terraform plan -out=tfplan-dev -var-file=envs/dev/dev.tfvars -no-color
+        working-directory: infra
+
+      - name: Save plan output
+        run: terraform show -no-color tfplan-dev | tee plan.txt
+        working-directory: infra
+
+      - name: Upload tfplan-dev artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-dev
+          path: infra/tfplan-dev
+
+      - name: Upload project.zip artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-zip
+          path: infra/tmp/project.zip
+
       - name: Post plan as PR comment
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         continue-on-error: true
         with:
@@ -86,41 +192,201 @@ jobs:
               body: `<details><summary>Terraform Plan</
               summary>\n\n\`\`\`\\\n${plan}\n\`\`\`\n</details>`
             });
-  apply:
-    name: Apply
-    runs-on: ubuntu-latest
+
+  dev_apply:
+    name: Dev apply
+    needs: terraform_plan_pr
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: dev
+    runs-on: ubuntu-latest
     permissions:
       contents: read
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
+      - name: Download tfplan-dev artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-dev
+          path: infra
+
+      - name: Download project.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: project-zip
+          path: infra/tmp
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: backend/package-lock.json
+
       - name: Build backend artifact
         working-directory: backend
         run: |
           npm ci
           npm run build
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Terraform init
-        run: terraform -chdir=${{ env.TF_DIR }} init
+        run: terraform init
+        working-directory: infra
+
+      - name: Select dev workspace
+        run: terraform workspace select dev || terraform workspace new dev
+        working-directory: infra
+
+      # - name: Terraform apply
+      #   run: terraform apply -auto-approve tfplan-dev
+      #   working-directory: infra
+
+      # - name: Terraform destroy
+      #   run: terraform destroy -var-file=envs/dev/dev.tfvars -auto-approve
+      #   working-directory: infra
+
+  validate_prod:
+    name: Validate prod plan
+    needs: dev_apply
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Build backend artifact
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init
+        working-directory: infra
+
+      - name: Select prod workspace
+        run: terraform workspace select prod || terraform workspace new prod
+        working-directory: infra
+
       - name: Terraform plan
         run: |
-          terraform -chdir=${{ env.TF_DIR }} plan \
-            -var-file=envs/dev/dev.tfvars
+          terraform plan -out=tfplan-prod \
+            -var-file=envs/prod/prod.tfvars -no-color
+        working-directory: infra
+
+      - name: Upload tfplan-prod artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-prod
+          path: infra/tfplan-prod
+
+      - name: Upload project.zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-zip
+          path: infra/tmp/project.zip
+
+  prod_apply:
+    name: Prod apply
+    needs: validate_prod
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: prod
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
+      - name: Download tfplan-prod artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-prod
+          path: infra
+
+      - name: Download project.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: project-zip
+          path: infra/tmp
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Build backend artifact
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init
+        working-directory: infra
+
+      - name: Select prod workspace
+        run: terraform workspace select prod || terraform workspace new prod
+        working-directory: infra
+
       # - name: Terraform apply
-      #   run: terraform -chdir=${{ env.TF_DIR }} apply -var-file=envs/dev/dev.tfvars -auto-approve
+      #   run: terraform apply tfplan-prod
+      #   working-directory: infra
+
       # - name: Terraform destroy
-      #   run: terraform -chdir=${{ env.TF_DIR }} destroy -var-file=envs/dev/dev.tfvars -auto-approve
+      #   run: terraform destroy -var-file=envs/prod/prod.tfvars -auto-approve
+      #   working-directory: infra

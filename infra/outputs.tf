@@ -57,3 +57,13 @@ output "dlq_arn" {
   description = "Dead letter queue ARN"
   value       = module.tickets_queue.dlq_arn
 }
+
+output "scheduler_arn" {
+  description = "The ARN of the scheduler."
+  value       = module.scheduler.scheduler_arn
+}
+
+output "scheduler_name" {
+  description = "The name of the scheduler."
+  value       = module.scheduler.scheduler_name
+}

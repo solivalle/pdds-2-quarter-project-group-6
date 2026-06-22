@@ -20,3 +20,7 @@ message_retention_seconds     = 86400
 dlq_message_retention_seconds = 1209600
 visibility_timeout_seconds    = 30
 polling_batch_size            = 5
+architecture                  = "arm64"
+memory_size                   = 256
+schedule_expression           = "rate(5 minutes)"
+scheduler_timezone            = "America/Guatemala"

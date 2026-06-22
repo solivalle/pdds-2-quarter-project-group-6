@@ -60,6 +60,7 @@ module "tickets_queue" {
   environment                   = var.environment
 }
 
+// The compute module creates the EC2 instance and outputs its ID and ARN for use in the outputs.tf file
 module "compute" {
   source = "./modules/compute"
 
@@ -81,6 +82,31 @@ module "compute" {
   queue_arn               = module.tickets_queue.queue_arn
   dlq_url                 = module.tickets_queue.dlq_url
   polling_batch_size      = var.polling_batch_size
+}
+
+// The compute_lambda module creates the Lambda function and outputs its ARN for use in the scheduler module
+module "compute_lambda" {
+  source = "./modules/compute_lambda"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  alb_dns_name      = module.ingress.alb_dns_name
+  health_check_path = var.health_check_path
+  architecture      = var.architecture
+  memory_size       = var.memory_size
+}
+
+// The scheduler module creates the EventBridge Scheduler and outputs its ARN and name for use in the outputs.tf file
+module "scheduler" {
+  source = "./modules/scheduler"
+
+  environment = var.environment
+
+  schedule_expression = var.schedule_expression
+  scheduler_timezone  = var.scheduler_timezone
+
+  target_lambda_arn  = module.compute_lambda.lambda_arn
+  target_lambda_name = module.compute_lambda.lambda_function_name
 }
 
 module "database" {
