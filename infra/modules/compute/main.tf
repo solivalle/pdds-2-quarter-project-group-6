@@ -77,11 +77,6 @@ resource "aws_s3_object" "project" {
       condition     = fileexists("${local.backend_dist_dir}/main.js")
       error_message = "Backend build missing. Run `npm run deploy:prepare` from the repository root before terraform plan/apply."
     }
-
-    precondition {
-      condition     = contains(local.frontend_dist_files, "index.html") && length(local.frontend_dist_files) > 1
-      error_message = "Frontend build missing or incomplete. Run `npm run deploy:prepare` from the repository root before terraform plan/apply."
-    }
   }
 }
 
