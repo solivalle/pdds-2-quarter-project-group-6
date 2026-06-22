@@ -2418,7 +2418,7 @@ La combinación de logs estructurados, métricas RED, dashboards y alarmas propo
 
 El siguiente estimado representa una aproximación de orden de magnitud para un entorno operativo inicial de TicketFlow desplegado en AWS.
 
-La estimación se basa en precios públicos disponibles al momento del diseño y utiliza como referencia una carga moderada correspondiente a una organización pequeña o mediana.
+La estimación fue validada utilizando AWS Pricing Calculator y considera la región US West (Oregon), seleccionada como referencia para el despliegue del proyecto.
 
 Los valores presentados no pretenden representar una cotización exacta, sino proporcionar una base para comprender los principales factores de costo de la arquitectura.
 
@@ -2440,111 +2440,48 @@ Para realizar la estimación se consideran los siguientes supuestos:
 
 ### 31.3 Estimación por Servicio
 
-#### Amazon EC2
+La estimación fue obtenida utilizando AWS Pricing Calculator para la región **US West (Oregon)** considerando la arquitectura propuesta para TicketFlow y los supuestos de uso definidos anteriormente. El cálculo incluye los principales servicios utilizados por la plataforma, tanto para operación de negocio como para observabilidad y seguridad.
 
-Se considera una instancia de aplicación de tamaño pequeño ejecutando la API principal.
+| Servicio                  | Descripción                                        | Costo Mensual |
+| ------------------------- | -------------------------------------------------- | ------------: |
+| Amazon EC2                | Instancia t3.micro para ejecución de la API NodeJS |      USD 7.59 |
+| Application Load Balancer | Balanceador de carga público                       |     USD 18.77 |
+| NAT Gateway               | Conectividad saliente desde subnets privadas       |     USD 33.30 |
+| Amazon DynamoDB           | Persistencia principal de tickets y auditoría      |      USD 1.88 |
+| Amazon S3                 | Almacenamiento de adjuntos y reportes              |      USD 0.25 |
+| Amazon SQS                | Procesamiento asíncrono y colas de trabajo         |      USD 0.40 |
+| Amazon EventBridge        | Scheduler para evaluaciones periódicas de SLA      |      USD 1.01 |
+| Amazon CloudWatch         | Logs, métricas, dashboards y alarmas               |      USD 2.91 |
+| AWS Secrets Manager       | Gestión centralizada de secretos                   |      USD 1.20 |
+| AWS KMS                   | Gestión de claves de cifrado                       |      USD 1.00 |
 
-| Concepto       | Estimado mensual |
-| -------------- | ---------------- |
-| EC2 aplicación | USD 15 - 25      |
-
----
-
-#### Application Load Balancer
-
-| Concepto | Estimado mensual |
-| -------- | ---------------- |
-| ALB      | USD 15 - 25      |
-
----
-
-#### NAT Gateway
-
-| Concepto | Estimado mensual |
-|-----------|-----------|
-| NAT Gateway | USD 30 - 40 |
-
----
-
-#### DynamoDB
-
-Se considera modo On-Demand para adaptarse automáticamente a la carga.
-
-| Concepto              | Estimado mensual |
-| --------------------- | ---------------- |
-| Lecturas y escrituras | USD 5 - 15       |
-
----
-
-#### Amazon S3
-
-Incluye almacenamiento de adjuntos y reportes.
-
-| Concepto                     | Estimado mensual |
-| ---------------------------- | ---------------- |
-| Almacenamiento y solicitudes | USD 1 - 5        |
-
----
-
-#### Amazon SQS
-
-Procesamiento asíncrono de eventos y comandos.
-
-| Concepto     | Estimado mensual |
-| ------------ | ---------------- |
-| Mensajes SQS | Menor a USD 2    |
-
----
-
-#### EventBridge Scheduler
-
-| Concepto           | Estimado mensual |
-| ------------------ | ---------------- |
-| Reglas programadas | Menor a USD 1    |
-
----
-
-#### CloudWatch
-
-Logs, métricas, dashboards y alarmas.
-
-| Concepto       | Estimado mensual |
-| -------------- | ---------------- |
-| Observabilidad | USD 3 - 10       |
-
----
-
-#### Secrets Manager y KMS
-
-| Concepto                     | Estimado mensual |
-| ---------------------------- | ---------------- |
-| Gestión de secretos y claves | USD 1 - 5        |
+Los valores corresponden a un entorno productivo inicial con una carga moderada y deben interpretarse como una referencia de planificación. El costo real dependerá del volumen efectivo de usuarios, tickets, almacenamiento consumido y frecuencia de operaciones ejecutadas.
 
 ---
 
 ### 31.4 Resumen General
 
-| Servicio              | Rango mensual estimado |
-| --------------------- | ---------------------- |
-| EC2                   | USD 15 - 25            |
-| ALB                   | USD 15 - 25            |
-| NAT Gateway | USD 30 - 40 |
-| DynamoDB              | USD 5 - 15             |
-| S3                    | USD 1 - 5              |
-| SQS                   | USD 0 - 2              |
-| EventBridge           | USD 0 - 1              |
-| CloudWatch            | USD 3 - 10             |
-| Secrets Manager / KMS | USD 1 - 5              |
+La estimación consolidada obtenida mediante AWS Pricing Calculator arroja el siguiente resultado:
 
-**Costo mensual estimado total:**
+| Concepto               |      Valor |
+| ---------------------- | ---------: |
+| Costo Inicial          |   USD 0.00 |
+| Costo Mensual Estimado |  USD 68.31 |
+| Costo Anual Estimado   | USD 819.72 |
 
-```text
-USD 70 - 130 por mes
-```
+Se observa que los principales generadores de costo son:
 
-Este valor corresponde a una primera aproximación para un entorno productivo de tamaño pequeño y puede variar según el volumen real de usuarios, tickets y almacenamiento consumido.
+1. NAT Gateway (USD 33.30).
+2. Application Load Balancer (USD 18.77).
+3. Amazon EC2 (USD 7.59).
 
----
+Estos tres componentes representan aproximadamente el 87% del costo total estimado de la arquitectura.
+
+El análisis permite concluir que el principal factor de gasto no corresponde a la base de datos ni al almacenamiento, sino a los componentes de red y disponibilidad necesarios para mantener una arquitectura segura basada en subnets privadas y acceso controlado mediante Application Load Balancer.
+
+La estimación obtenida mediante AWS Pricing Calculator proporciona una base razonable para la planificación financiera inicial del proyecto y servirá como referencia para la definición de presupuestos y alertas de costo en futuras etapas de automatización y operación.
+
+[Cotizacion de Referencia realizada en AWS Pricing Calculator](/docs/entrega_5/Proyecto_Infra_2026.pdf)
 
 ### 31.5 Principales Drivers de Costo
 
