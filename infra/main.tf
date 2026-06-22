@@ -93,6 +93,7 @@ module "compute_lambda" {
   memory_size       = var.memory_size
 }
 
+// The scheduler module creates the EventBridge Scheduler and outputs its ARN and name for use in the outputs.tf file
 module "scheduler" {
   source = "./modules/scheduler"
 
