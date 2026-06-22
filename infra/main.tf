@@ -59,6 +59,7 @@ module "tickets_queue" {
   environment                = var.environment
 }
 
+// The compute module creates the EC2 instance and outputs its ID and ARN for use in the outputs.tf file
 module "compute" {
   source = "./modules/compute"
 
