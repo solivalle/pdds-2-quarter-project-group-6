@@ -67,6 +67,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -116,6 +119,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -191,6 +197,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
 
       - name: Download tfplan-dev artifact
         uses: actions/download-artifact@v4
