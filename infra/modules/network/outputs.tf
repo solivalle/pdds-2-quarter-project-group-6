@@ -22,3 +22,8 @@ output "app_sg_id" {
   description = "ID of the app security group — allows 8080 from the web security group"
   value       = aws_security_group.app.id
 }
+
+output "nat_gateway_id" {
+  description = "ID of the NAT Gateway for private subnet internet access"
+  value       = aws_nat_gateway.this.id
+}

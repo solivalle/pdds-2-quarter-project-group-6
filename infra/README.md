@@ -21,10 +21,32 @@ This directory contains the Terraform configuration for the **TicketFlow** suppo
    terraform apply
    cd ..
    ```
+
+> If the backend configuration changes (for example, adding `workspace_key_prefix`), run the initial infra init with state migration:
+>
+> ```bash
+> cd infra
+> terraform init -migrate-state
+> ```
+>
+> If the backend is already configured and you only want to reinitialize without migrating state, use:
+>
+> ```bash
+> terraform init -reconfigure
+> ```
+
 2. **Deploy the main workspace:**
    ```bash
    terraform init
+   terraform workspace select dev || terraform workspace new dev
    terraform apply -var-file=envs/dev/dev.tfvars
+   ```
+
+3. **Deploy prod:**
+   ```bash
+   terraform init
+   terraform workspace select prod || terraform workspace new prod
+   terraform apply -var-file=envs/prod/prod.tfvars
    ```
 
 ---
@@ -241,3 +263,107 @@ The `plan-on-PR` workflow was successfully executed on [Pull Request #16](https:
 **CI Pipeline Workflow Run Screenshot**:
 
 ![CI Plan Workflow](evidence/ci-plan.png)
+
+
+## **Delivery 4 — Delivery 4 — Async Infrastructure & Full CD Pipeline**
+
+### 3.1 Deliverable A — Async Messaging Module
+
+The following command was executed from `infra/` to capture asynchronous messaging foundation outputs:
+
+```bash
+terraform output
+```
+
+**Evidence Output** (`infra/evidence/async-foundation.txt`):
+
+```text
+% terraform output
+alb_dns_name = "group-6-dev-alb-134755440.us-west-2.elb.amazonaws.com"
+bucket_arn = "arn:aws:s3:::pdds-2-quarter-project-group-6-s3"
+bucket_name = "pdds-2-quarter-project-group-6-s3"
+compute_ec2_instance_id = "i-0d110578b7200d94b"
+database_table_arn = "arn:aws:dynamodb:us-west-2:245261108553:table/pdds-2-quarter-project-group-6-dev-tickets"
+database_table_name = "pdds-2-quarter-project-group-6-dev-tickets"
+dlq_arn = "arn:aws:sqs:us-west-2:245261108553:tickets-queue-dlq-dev"
+dlq_url = "https://sqs.us-west-2.amazonaws.com/245261108553/tickets-queue-dlq-dev"
+instance_arn = "arn:aws:ec2:us-west-2:245261108553:instance/i-0d110578b7200d94b"
+nat_gateway_id = "nat-0f98bbbba4b8a06c6"
+queue_arn = "arn:aws:sqs:us-west-2:245261108553:tickets-queue-queue-dev"
+queue_url = "https://sqs.us-west-2.amazonaws.com/245261108553/tickets-queue-queue-dev"
+```
+
+### 3.2 Deliverable B — Event-Driven Compute
+
+The following command was executed from `infra/` to capture the event source mapping or Pub/Sub subscription resource plan excerpt:
+
+```bash
+terraform plan -target=module.compute -out=event-source-plan
+terraform show -no-color event-source-plan | tee infra/evidence/event-source-plan.txt
+```
+
+**Evidence Output** (`infra/evidence/event-source-plan.txt`):
+
+```text
+% terraform show -no-color event-source-plan
+# Replace this excerpt with the actual event source mapping or subscription resource plan output
+```
+
+**Console Screenshot** (`infra/evidence/event-source.png`):
+
+![Event Source Trigger](evidence/event-source.png)
+
+### 3.3 Deliverable C — Scheduled Jobs
+
+The following command was executed from `infra/` to capture the scheduler rule or Cloud Scheduler job plan excerpt:
+
+```bash
+terraform plan -target=module.scheduler -out=scheduler-plan
+terraform show -no-color scheduler-plan | tee infra/evidence/scheduler-plan.txt
+```
+
+**Evidence Output** (`infra/evidence/scheduler-plan.txt`):
+
+```text
+% terraform show -no-color scheduler-plan
+# Replace this excerpt with the actual scheduler rule or Cloud Scheduler resource plan output
+```
+
+**Console Screenshot** (`infra/evidence/scheduler.png`):
+
+![Scheduler Trigger](evidence/scheduler.png)
+
+### 3.4 Deliverable D — Full CD Pipeline
+
+The following pull request demonstrates the `plan-on-PR` workflow execution and the async resources plan posted as a PR comment:
+
+- [Pull Request #16](https://github.com/solivalle/pdds-2-quarter-project-group-6/pull/29)
+
+- [Gitbut Actions completed](https://github.com/solivalle/pdds-2-quarter-project-group-6/actions/runs/27931164447/job/82643257276)
+
+**Evidence Screenshots**:
+
+- `infra/evidence/github-environments.png` — GitHub Settings → Environments showing `dev` and `staging` protection rules.
+- `infra/evidence/ci-apply-dev.png` — Dev apply completed automatically after merge.
+- `infra/evidence/ci-apply-staging.png` — Staging apply showing the approval gate and the reviewer who approved.
+- `infra/evidence/ci-destroy.png` — Gated destroy workflow with `workflow_dispatch` trigger visible.
+- `infra/evidence/ci-drift.png` — Drift detection scheduled run showing plan output posted to workflow summary.
+- `infra/evidence/ruleset-config.png` — GitHub Settings → Rules → Rulesets with the active main ruleset and required status checks enabled.
+- `infra/evidence/ruleset-blocked-merge.png` — Pull request showing merge blocked by required Terraform check failure or pending status.
+
+**Screenshots**:
+
+![GitHub Environments](evidence/github-environments.png)
+
+![CI Apply Dev](evidence/ci-apply-dev.png)
+
+![CI Apply Staging](evidence/ci-apply-staging.png)
+
+![CI Destroy](evidence/ci-destroy.png)
+
+![CI Drift Detection](evidence/ci-drift.png)
+
+![Ruleset Configuration](evidence/ruleset-config.png)
+
+![Blocked Merge Request](evidence/ruleset-blocked-merge.png)
+
