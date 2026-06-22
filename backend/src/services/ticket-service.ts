@@ -7,6 +7,7 @@ import { calculateSla, evaluateSla } from '../domain/sla';
 import { Attachment, AuthUser, AuditEvent, Comment, Ticket, TicketFilters } from '../domain/types';
 import { assertFound, HttpError } from '../utils/http-error';
 import { NotificationService } from './notification-service';
+import { AsyncMessageService, systemAsyncActor } from './async-message-service';
 import { UserService } from './user-service';
 
 export interface UploadedFileInput {
@@ -41,7 +42,8 @@ export class TicketService {
     private readonly repository: TicketRepository,
     private readonly storage: AttachmentStorage,
     private readonly users: UserService,
-    private readonly notifications: NotificationService
+    private readonly notifications: NotificationService,
+    private readonly asyncMessages?: AsyncMessageService
   ) {}
 
   async createTicket(input: CreateTicketInput, actor: AuthUser): Promise<Ticket> {
@@ -118,6 +120,7 @@ export class TicketService {
     ticket.auditLog.push(this.audit('STATUS_CHANGED', actor.id, input.reason, previous, input.status));
 
     const saved = await this.repository.update(ticket);
+    await this.queueTicketSnapshotOnStatus(saved, actor, input.reason);
     const requester = this.users.findById(saved.requesterId);
     if (requester) {
       await this.notifications.statusChanged(saved, requester.email);
@@ -214,7 +217,10 @@ export class TicketService {
         await this.notifications.ticketEscalated(ticket, supervisors);
       }
 
-      await this.repository.update(ticket);
+      const saved = await this.repository.update(ticket);
+      if (needsEscalation) {
+        await this.queueSlaEscalationSnapshot(saved);
+      }
     }
 
     return { evaluated: active.length, escalated };
@@ -267,7 +273,7 @@ export class TicketService {
       return { ...filters, requesterId: actor.id };
     }
     if (actor.role === 'AGENT') {
-      return { ...filters, teamId: actor.teamId };
+      return { ...filters, assignedAgentId: actor.id };
     }
     return filters;
   }
@@ -277,8 +283,8 @@ export class TicketService {
     if (actor.role === 'REQUESTER' && ticket.requesterId !== actor.id) {
       throw new HttpError(403, 'You can only access your own tickets');
     }
-    if (actor.role === 'AGENT' && ticket.teamId && actor.teamId && ticket.teamId !== actor.teamId) {
-      throw new HttpError(403, 'You can only access tickets for your team');
+    if (actor.role === 'AGENT' && ticket.assignedAgentId !== actor.id) {
+      throw new HttpError(403, 'You can only access tickets assigned to you');
     }
     return ticket;
   }
@@ -303,6 +309,39 @@ export class TicketService {
 
   private audit(type: AuditEvent['type'], actorId: string, reason?: string, from?: unknown, to?: unknown): AuditEvent {
     return { id: `AUD-${randomUUID().slice(0, 8)}`, type, actorId, at: new Date().toISOString(), reason, from, to };
+  }
+
+  private async queueTicketSnapshotOnStatus(ticket: Ticket, actor: AuthUser, reason?: string): Promise<void> {
+    if (!this.asyncMessages || !['RESOLVED', 'CLOSED'].includes(ticket.status)) {
+      return;
+    }
+
+    await this.asyncMessages.enqueueTicketSnapshot({
+      type: 'ticket-snapshot',
+      ticketId: ticket.id,
+      trigger: 'status-change',
+      status: ticket.status,
+      reason: reason ?? `Ticket moved to ${ticket.status}`
+    }, {
+      id: actor.id,
+      email: actor.email,
+      role: actor.role,
+      teamId: actor.teamId
+    });
+  }
+
+  private async queueSlaEscalationSnapshot(ticket: Ticket): Promise<void> {
+    if (!this.asyncMessages) {
+      return;
+    }
+
+    await this.asyncMessages.enqueueTicketSnapshot({
+      type: 'ticket-snapshot',
+      ticketId: ticket.id,
+      trigger: 'sla-escalation',
+      status: ticket.status,
+      reason: 'Ticket escalated after SLA breach'
+    }, systemAsyncActor());
   }
 }
 

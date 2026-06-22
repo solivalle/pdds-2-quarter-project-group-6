@@ -490,7 +490,10 @@ function TicketDetail({
             Motivo
             <input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Actualizacion operativa" />
           </label>
-          <button className="secondary-button" type="button" onClick={() => onUpdate(() => api.updateStatus(token, ticket.id, status, reason || undefined), 'Estado actualizado')}>
+          <button className="secondary-button" type="button" onClick={() => onUpdate(
+            () => api.updateStatus(token, ticket.id, status, reason || undefined),
+            ['RESOLVED', 'CLOSED'].includes(status) ? 'Estado actualizado y snapshot enviado a cola' : 'Estado actualizado'
+          )}>
             Actualizar estado
           </button>
 

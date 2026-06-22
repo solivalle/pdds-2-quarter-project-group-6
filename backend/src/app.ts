@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found';
 import { AppServices } from './services/container';
 import { authRoutes } from './routes/auth-routes';
+import { asyncRoutes } from './routes/async-routes';
 import { healthRoutes } from './routes/health-routes';
 import { notificationRoutes } from './routes/notification-routes';
 import { reportRoutes } from './routes/report-routes';
@@ -21,7 +22,16 @@ export function createApp(services: AppServices): express.Express {
   const api = express.Router();
 
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        'upgrade-insecure-requests': null
+      }
+    },
+    crossOriginOpenerPolicy: false,
+    hsts: false,
+    originAgentCluster: false
+  }));
   app.use(cors({ origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(',') }));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
@@ -31,6 +41,7 @@ export function createApp(services: AppServices): express.Express {
 
   api.use('/auth', authRoutes(services.auth));
   api.use(requireAuth(services.auth));
+  api.use('/async', asyncRoutes(services.asyncMessages));
   api.use('/tickets', ticketRoutes(services.tickets));
   api.use('/reports', reportRoutes(services.reports));
   api.use('/notifications', notificationRoutes(services.notifications));

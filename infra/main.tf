@@ -52,11 +52,12 @@ module "app_bucket" {
 module "tickets_queue" {
   source = "./modules/async"
 
-  queue_name                 = var.queue_name
-  max_receive_count          = var.max_receive_count
-  message_retention_seconds  = var.message_retention_seconds
-  visibility_timeout_seconds = var.visibility_timeout_seconds
-  environment                = var.environment
+  queue_name_prefix             = var.queue_name_prefix
+  max_receive_count             = var.max_receive_count
+  message_retention_seconds     = var.message_retention_seconds
+  dlq_message_retention_seconds = var.dlq_message_retention_seconds
+  visibility_timeout_seconds    = var.visibility_timeout_seconds
+  environment                   = var.environment
 }
 
 // The compute module creates the EC2 instance and outputs its ID and ARN for use in the outputs.tf file
@@ -78,7 +79,9 @@ module "compute" {
   table_name              = module.database.table_name
   default_port            = var.default_port
   queue_url               = module.tickets_queue.queue_url
+  queue_arn               = module.tickets_queue.queue_arn
   dlq_url                 = module.tickets_queue.dlq_url
+  polling_batch_size      = var.polling_batch_size
 }
 
 // The compute_lambda module creates the Lambda function and outputs its ARN for use in the scheduler module
@@ -116,4 +119,3 @@ module "database" {
 resource "time_sleep" "lock_demo" {
   create_duration = "20s"
 }
-

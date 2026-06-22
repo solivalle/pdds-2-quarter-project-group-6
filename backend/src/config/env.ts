@@ -22,6 +22,15 @@ const envSchema = z.object({
   DYNAMODB_TICKETS_TABLE: z.string().default('pdds-2-quarter-project-group-6-dev-tickets'),
   ATTACHMENT_STORE: z.enum(['local', 's3']).default('local'),
   S3_ATTACHMENTS_BUCKET: z.string().default('ticketflow-dev-attachments'),
+  QUEUE_URL: z.string().optional(),
+  DLQ_URL: z.string().optional(),
+  ASYNC_QUEUE_URL: z.string().optional(),
+  ASYNC_DLQ_URL: z.string().optional(),
+  ASYNC_BUCKET_NAME: z.string().optional(),
+  ASYNC_POLLING_ENABLED: booleanEnv.default(false),
+  ASYNC_POLL_BATCH_SIZE: z.coerce.number().int().min(1).max(10).default(1),
+  ASYNC_POLL_WAIT_TIME_SECONDS: z.coerce.number().int().min(0).max(20).default(10),
+  ASYNC_POLL_INTERVAL_MS: z.coerce.number().int().min(250).default(1000),
   LOCAL_ATTACHMENTS_DIR: z.string().default('./uploads'),
   FRONTEND_DIST_DIR: z.string().default('./public'),
   SLA_JOB_CRON: z.string().default('*/5 * * * *'),
@@ -32,4 +41,11 @@ const envSchema = z.object({
   DEFAULT_USERS_JSON: z.string().optional()
 });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+export const env = {
+  ...parsedEnv,
+  ASYNC_QUEUE_URL: parsedEnv.ASYNC_QUEUE_URL ?? parsedEnv.QUEUE_URL,
+  ASYNC_DLQ_URL: parsedEnv.ASYNC_DLQ_URL ?? parsedEnv.DLQ_URL,
+  ASYNC_BUCKET_NAME: parsedEnv.ASYNC_BUCKET_NAME ?? parsedEnv.S3_ATTACHMENTS_BUCKET
+};
