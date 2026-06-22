@@ -1,0 +1,91 @@
+module.compute_lambda.data.archive_file.lambda: Reading...
+module.compute_lambda.data.archive_file.lambda: Read complete after 0s [id=48c53edf486c2389979b700d3999d325510d0339]
+module.compute.data.archive_file.app: Reading...
+module.compute.data.archive_file.app: Read complete after 1s [id=64f5f049e539017babe015e3f8931e47c0a573f5]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # time_sleep.lock_demo will be created
+  + resource "time_sleep" "lock_demo" {
+      + create_duration = "20s"
+      + id              = (known after apply)
+    }
+
+  # module.app_bucket.aws_s3_bucket.this will be created
+  + resource "aws_s3_bucket" "this" {
+      + acceleration_status         = (known after apply)
+      + acl                         = (known after apply)
+      + arn                         = (known after apply)
+      + bucket                      = "app-pdds-2-quarter-project-group-6-s3"
+      + bucket_domain_name          = (known after apply)
+      + bucket_prefix               = (known after apply)
+      + bucket_regional_domain_name = (known after apply)
+      + force_destroy               = false
+      + hosted_zone_id              = (known after apply)
+      + id                          = (known after apply)
+      + object_lock_enabled         = (known after apply)
+      + policy                      = (known after apply)
+      + region                      = (known after apply)
+      + request_payer               = (known after apply)
+      + tags                        = {
+          + "Environment" = "dev"
+        }
+      + tags_all                    = {
+          + "Environment" = "dev"
+      + tags_all                          = (known after apply)
+      + url                               = (known after apply)
+      + visibility_timeout_seconds        = 30
+    }
+
+  # module.tickets_queue.aws_sqs_queue.main will be created
+  + resource "aws_sqs_queue" "main" {
+      + arn                               = (known after apply)
+      + content_based_deduplication       = false
+      + deduplication_scope               = (known after apply)
+      + delay_seconds                     = 0
+      + fifo_queue                        = false
+      + fifo_throughput_limit             = (known after apply)
+      + id                                = (known after apply)
+      + kms_data_key_reuse_period_seconds = (known after apply)
+      + max_message_size                  = 262144
+      + message_retention_seconds         = 345600
+      + name                              = "tickets-queue-dev"
+      + name_prefix                       = (known after apply)
+      + policy                            = (known after apply)
+      + receive_wait_time_seconds         = 0
+      + redrive_allow_policy              = (known after apply)
+      + redrive_policy                    = (known after apply)
+      + sqs_managed_sse_enabled           = (known after apply)
+      + tags_all                          = (known after apply)
+      + url                               = (known after apply)
+      + visibility_timeout_seconds        = 30
+    }
+
+Plan: 62 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + alb_dns_name            = (known after apply)
+  + bucket_arn              = (known after apply)
+  + bucket_name             = (known after apply)
+  + compute_ec2_instance_id = (known after apply)
+  + database_table_arn      = (known after apply)
+  + database_table_name     = "pdds-2-quarter-project-group-6-dev-tickets"
+  + dlq_arn                 = (known after apply)
+  + dlq_url                 = (known after apply)
+  + instance_arn            = (known after apply)
+  + nat_gateway_id          = (known after apply)
+  + queue_arn               = (known after apply)
+  + queue_url               = (known after apply)
+  + scheduler_arn           = (known after apply)
+  + scheduler_name          = "scheduler-dev"
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: tfplan-dev
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan-dev"
