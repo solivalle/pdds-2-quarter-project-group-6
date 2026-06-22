@@ -78,3 +78,7 @@ export const reportSchema = z.object({
     to: z.string().datetime().optional()
   })
 });
+
+export const asyncEnqueueSchema = z.object({
+  body: z.unknown().refine((value) => value !== undefined, 'JSON body is required')
+});

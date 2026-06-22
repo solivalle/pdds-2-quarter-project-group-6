@@ -76,7 +76,17 @@ variable "queue_url" {
   type        = string
 }
 
+variable "queue_arn" {
+  description = "SQS main queue ARN — used to scope least-privilege IAM permissions"
+  type        = string
+}
+
 variable "dlq_url" {
   description = "Dead letter queue URL"
   type        = string
+}
+
+variable "polling_batch_size" {
+  description = "Maximum number of SQS messages the EC2 worker reads per poll"
+  type        = number
 }

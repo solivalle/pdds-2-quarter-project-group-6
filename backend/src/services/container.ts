@@ -5,6 +5,14 @@ import { LocalAttachmentStorage } from '../data/local-attachment-storage';
 import { MemoryTicketRepository } from '../data/memory-ticket-repository';
 import { S3AttachmentStorage } from '../data/s3-attachment-storage';
 import { TicketRepository } from '../data/ticket-repository';
+import {
+  AsyncConsumer,
+  AsyncMessageQueue,
+  AsyncMessageService,
+  AsyncResultWriter,
+  S3AsyncResultWriter,
+  SqsAsyncMessageQueue
+} from './async-message-service';
 import { AuthService } from './auth-service';
 import { NotificationService } from './notification-service';
 import { ReportService } from './report-service';
@@ -19,6 +27,10 @@ export interface AppServices {
   reports: ReportService;
   repository: TicketRepository;
   storage: AttachmentStorage;
+  asyncQueue: AsyncMessageQueue;
+  asyncResults: AsyncResultWriter;
+  asyncMessages: AsyncMessageService;
+  asyncConsumer: AsyncConsumer;
 }
 
 export function createServices(overrides: Partial<AppServices> = {}): AppServices {
@@ -27,8 +39,12 @@ export function createServices(overrides: Partial<AppServices> = {}): AppService
   const notifications = overrides.notifications ?? new NotificationService();
   const repository = overrides.repository ?? (env.DATA_STORE === 'dynamodb' ? new DynamoDbTicketRepository() : new MemoryTicketRepository());
   const storage = overrides.storage ?? (env.ATTACHMENT_STORE === 's3' ? new S3AttachmentStorage() : new LocalAttachmentStorage());
-  const tickets = overrides.tickets ?? new TicketService(repository, storage, users, notifications);
+  const asyncQueue = overrides.asyncQueue ?? new SqsAsyncMessageQueue();
+  const asyncResults = overrides.asyncResults ?? new S3AsyncResultWriter();
+  const asyncMessages = overrides.asyncMessages ?? new AsyncMessageService(asyncQueue);
+  const tickets = overrides.tickets ?? new TicketService(repository, storage, users, notifications, asyncMessages);
   const reports = overrides.reports ?? new ReportService(repository);
+  const asyncConsumer = overrides.asyncConsumer ?? new AsyncConsumer(asyncQueue, asyncResults, repository);
 
-  return { users, auth, notifications, tickets, reports, repository, storage };
+  return { users, auth, notifications, tickets, reports, repository, storage, asyncQueue, asyncResults, asyncMessages, asyncConsumer };
 }
