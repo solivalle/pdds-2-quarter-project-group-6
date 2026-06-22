@@ -170,6 +170,13 @@ jobs:
           name: tfplan-dev
           path: infra/tfplan-dev
 
+      - name: Upload project.zip artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-zip
+          path: infra/tmp/project.zip
+
       - name: Post plan as PR comment
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -206,6 +213,12 @@ jobs:
         with:
           name: tfplan-dev
           path: infra
+
+      - name: Download project.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: project-zip
+          path: infra/tmp
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -258,6 +271,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -302,6 +318,12 @@ jobs:
           name: tfplan-prod
           path: infra/tfplan-prod
 
+      - name: Upload project.zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-zip
+          path: infra/tmp/project.zip
+
   prod_apply:
     name: Prod apply
     needs: validate_prod
@@ -314,11 +336,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
       - name: Download tfplan-prod artifact
         uses: actions/download-artifact@v4
         with:
           name: tfplan-prod
           path: infra
+
+      - name: Download project.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: project-zip
+          path: infra/tmp
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
