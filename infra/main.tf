@@ -81,6 +81,7 @@ module "compute" {
   dlq_url                 = module.tickets_queue.dlq_url
 }
 
+// The compute_lambda module creates the Lambda function and outputs its ARN for use in the scheduler module
 module "compute_lambda" {
   source = "./modules/compute_lambda"
 
