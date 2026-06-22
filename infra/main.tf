@@ -7,6 +7,9 @@ module "network" {
   public_subnet_cidrs  = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
   availability_zones   = var.availability_zones
+  ingress_port         = var.ingress_port
+  private_port         = var.private_port
+  default_port         = var.default_port
 }
 
 #── VPC ───────────────────────────────────────────────────────────────────────
@@ -19,6 +22,10 @@ module "ingress" {
   vpc_id            = module.network.vpc_id
   public_subnet_ids = module.network.public_subnet_ids
   web_sg_id         = module.network.web_sg_id
+  default_port      = var.default_port
+  ingress_port      = var.ingress_port
+  private_port      = var.private_port
+  health_check_path = var.health_check_path
 }
 
 #── Security Groups ───────────────────────────────────────────────────────────
@@ -42,6 +49,16 @@ module "app_bucket" {
   environment = var.environment
 }
 
+module "tickets_queue" {
+  source = "./modules/async"
+
+  queue_name                 = var.queue_name
+  max_receive_count          = var.max_receive_count
+  message_retention_seconds  = var.message_retention_seconds
+  visibility_timeout_seconds = var.visibility_timeout_seconds
+  environment                = var.environment
+}
+
 module "compute" {
   source = "./modules/compute"
 
@@ -58,6 +75,32 @@ module "compute" {
   aws_lb_target_group_arn = module.ingress.aws_lb_target_group_arn
   table_arn               = module.database.table_arn
   table_name              = module.database.table_name
+  default_port            = var.default_port
+  queue_url               = module.tickets_queue.queue_url
+  dlq_url                 = module.tickets_queue.dlq_url
+}
+
+module "compute_lambda" {
+  source = "./modules/compute_lambda"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  alb_dns_name      = module.ingress.alb_dns_name
+  health_check_path = var.health_check_path
+  architecture      = var.architecture
+  memory_size       = var.memory_size
+}
+
+module "scheduler" {
+  source = "./modules/scheduler"
+
+  environment = var.environment
+
+  schedule_expression = var.schedule_expression
+  scheduler_timezone  = var.scheduler_timezone
+
+  target_lambda_arn  = module.compute_lambda.lambda_arn
+  target_lambda_name = module.compute_lambda.lambda_function_name
 }
 
 module "database" {
@@ -70,3 +113,4 @@ module "database" {
 resource "time_sleep" "lock_demo" {
   create_duration = "20s"
 }
+

@@ -21,10 +21,32 @@ This directory contains the Terraform configuration for the **TicketFlow** suppo
    terraform apply
    cd ..
    ```
+
+> If the backend configuration changes (for example, adding `workspace_key_prefix`), run the initial infra init with state migration:
+>
+> ```bash
+> cd infra
+> terraform init -migrate-state
+> ```
+>
+> If the backend is already configured and you only want to reinitialize without migrating state, use:
+>
+> ```bash
+> terraform init -reconfigure
+> ```
+
 2. **Deploy the main workspace:**
    ```bash
    terraform init
+   terraform workspace select dev || terraform workspace new dev
    terraform apply -var-file=envs/dev/dev.tfvars
+   ```
+
+3. **Deploy prod:**
+   ```bash
+   terraform init
+   terraform workspace select prod || terraform workspace new prod
+   terraform apply -var-file=envs/prod/prod.tfvars
    ```
 
 ---
