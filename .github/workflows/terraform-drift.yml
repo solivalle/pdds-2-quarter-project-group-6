@@ -22,6 +22,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Ensure infra/tmp exists
+        run: mkdir -p infra/tmp
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -53,7 +56,7 @@ jobs:
 
       - name: Select dev workspace
         working-directory: ${{ env.TF_DIR }}
-        run: terraform workspace select dev
+        run: terraform workspace select dev || terraform workspace new dev
 
       - name: Terraform drift check
         id: drift
@@ -61,14 +64,20 @@ jobs:
         shell: bash
         run: |
           set +e
+          echo "## Drift check working dir: $(pwd)"
+          echo "## Listing infra contents"
+          ls -la
+          echo "## Listing current directory contents"
+          ls -la .
 
           terraform plan \
             -detailed-exitcode \
             -var-file=envs/dev/dev.tfvars \
             -no-color \
-            > plan.txt
+            | tee plan.txt
 
-          EXIT_CODE=$?
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "Terraform exit code: $EXIT_CODE"
 
           {
             echo "## Terraform Drift Detection (dev)"
