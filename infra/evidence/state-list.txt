@@ -1,0 +1,7 @@
+Placeholder for Delivery 5 IaC coverage evidence.
+
+Run before submission:
+
+terraform state list > infra/evidence/state-list.txt
+
+Replace this placeholder with the complete real state list.

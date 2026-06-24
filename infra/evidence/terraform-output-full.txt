@@ -1,0 +1,7 @@
+Placeholder for Delivery 5 one-click deployment evidence.
+
+After clean-state apply:
+
+terraform output > infra/evidence/terraform-output-full.txt
+
+Replace this placeholder with the real output before submission.

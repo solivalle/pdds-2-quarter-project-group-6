@@ -117,6 +117,7 @@ export class TicketService {
       ticket.closedAt = now;
       ticket.sla.resolvedAt = now;
     }
+    ticket.sla = evaluateSla(ticket.sla, ticket.createdAt);
     ticket.auditLog.push(this.audit('STATUS_CHANGED', actor.id, input.reason, previous, input.status));
 
     const saved = await this.repository.update(ticket);
@@ -125,7 +126,7 @@ export class TicketService {
     if (requester) {
       await this.notifications.statusChanged(saved, requester.email);
     }
-    return this.present(saved, actor);
+    return this.present(await this.refreshSlaState(saved), actor);
   }
 
   async assignTicket(id: string, assignedAgentId: string, actor: AuthUser, reason?: string): Promise<Ticket> {
@@ -142,7 +143,7 @@ export class TicketService {
     ticket.status = ticket.status === 'OPEN' ? 'ASSIGNED' : ticket.status;
     ticket.updatedAt = new Date().toISOString();
     ticket.auditLog.push(this.audit(previous ? 'REASSIGNED' : 'ASSIGNED', actor.id, reason, previous, assignedAgentId));
-    return this.present(await this.repository.update(ticket), actor);
+    return this.present(await this.refreshSlaState(await this.repository.update(ticket)), actor);
   }
 
   async addComment(id: string, input: AddCommentInput, actor: AuthUser): Promise<Ticket> {
@@ -167,7 +168,7 @@ export class TicketService {
       ticket.sla.firstResponseAt = now;
     }
     ticket.auditLog.push(this.audit('COMMENT_ADDED', actor.id, input.visibility, undefined, { commentId: comment.id }));
-    return this.present(await this.repository.update(ticket), actor);
+    return this.present(await this.refreshSlaState(await this.repository.update(ticket)), actor);
   }
 
   async addAttachments(id: string, files: UploadedFileInput[], actor: AuthUser): Promise<Ticket> {
@@ -178,7 +179,7 @@ export class TicketService {
       ticket.auditLog.push(this.audit('ATTACHMENT_ADDED', actor.id, undefined, undefined, { attachmentId: attachment.id }));
     }
     ticket.updatedAt = new Date().toISOString();
-    return this.present(await this.repository.update(ticket), actor);
+    return this.present(await this.refreshSlaState(await this.repository.update(ticket)), actor);
   }
 
   async getAttachmentUrl(ticketId: string, attachmentId: string, actor: AuthUser): Promise<{ url: string }> {

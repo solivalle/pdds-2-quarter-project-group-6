@@ -46,6 +46,26 @@ function queryString(filters: TicketFilters): string {
   return value ? `?${value}` : '';
 }
 
+function ticketFormData(input: {
+  title: string;
+  description: string;
+  category: string;
+  priority?: string;
+  teamId?: string;
+  attachments?: File[];
+}): FormData {
+  const data = new FormData();
+  data.set('title', input.title);
+  data.set('description', input.description);
+  data.set('category', input.category);
+  if (input.priority) data.set('priority', input.priority);
+  if (input.teamId) data.set('teamId', input.teamId);
+  for (const file of input.attachments ?? []) {
+    data.append('attachments', file);
+  }
+  return data;
+}
+
 export const api = {
   async login(email: string, password: string): Promise<LoginResponse> {
     return request<LoginResponse>('/auth/login', {
@@ -65,10 +85,11 @@ export const api = {
     category: string;
     priority?: string;
     teamId?: string;
+    attachments?: File[];
   }): Promise<Ticket> {
     const response = await request<{ data: Ticket }>('/tickets', {
       method: 'POST',
-      body: JSON.stringify(input)
+      body: ticketFormData(input)
     }, token);
     return response.data;
   },
@@ -95,6 +116,30 @@ export const api = {
       body: JSON.stringify({ content, visibility })
     }, token);
     return response.data;
+  },
+
+  async addAttachments(token: string, ticketId: string, attachments: File[]): Promise<Ticket> {
+    const data = new FormData();
+    for (const file of attachments) {
+      data.append('attachments', file);
+    }
+    const response = await request<{ data: Ticket }>(`/tickets/${ticketId}/attachments`, {
+      method: 'POST',
+      body: data
+    }, token);
+    return response.data;
+  },
+
+  async downloadAttachment(token: string, ticketId: string, attachmentId: string): Promise<Blob> {
+    const response = await fetch(`${API_PREFIX}/tickets/${ticketId}/attachments/${attachmentId}/download`, {
+      headers: { authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      throw new ApiError(`No se pudo descargar el adjunto (${response.status})`, response.status);
+    }
+
+    return response.blob();
   },
 
   async performanceReport(token: string): Promise<PerformanceReport> {

@@ -1,0 +1,10 @@
+Placeholder for Delivery 5 observability evidence.
+
+Run after apply:
+
+terraform output backend_log_group_arn
+terraform output lambda_log_group_arn
+terraform output alb_5xx_alarm_arn
+terraform output lambda_errors_alarm_arn
+
+Replace this placeholder with the real output before submission.

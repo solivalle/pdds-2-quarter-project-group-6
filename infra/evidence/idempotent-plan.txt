@@ -1,0 +1,7 @@
+Placeholder for Delivery 5 idempotency evidence.
+
+After the second no-change run:
+
+terraform plan -detailed-exitcode -var-file=envs/dev/dev.tfvars -no-color
+
+Replace this placeholder with the real output and the exit code 0 confirmation.

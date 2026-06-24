@@ -53,6 +53,191 @@ This directory contains the Terraform configuration for the **TicketFlow** suppo
 
 ## Evidence
 
+### Delivery 5 — Security, Observability & One-Click Deployment
+
+#### IAM security module
+
+Plan excerpt: [`infra/evidence/iam-plan.txt`](evidence/iam-plan.txt)
+
+#### Secrets Manager and KMS
+
+Terraform outputs: [`infra/evidence/secrets-kms.txt`](evidence/secrets-kms.txt)
+
+Secrets Manager console screenshot required before submission:
+
+```text
+infra/evidence/secrets-console.png
+```
+
+#### OIDC CI authentication
+
+Screenshots required before submission:
+
+```text
+infra/evidence/oidc-secrets-removed.png
+infra/evidence/oidc-auth-log.png
+```
+
+#### TLS termination
+
+TLS curl output: [`infra/evidence/tls-curl.txt`](evidence/tls-curl.txt)
+
+TLS requires `enable_tls=true`, a team-controlled `domain_name`, and a valid Route53 `hosted_zone_id`.
+
+#### Observability
+
+Terraform outputs: [`infra/evidence/observability-outputs.txt`](evidence/observability-outputs.txt)
+
+Screenshots required before submission:
+
+```text
+infra/evidence/dashboard.png
+infra/evidence/budget.png
+```
+
+#### One-click deployment proof
+
+Terraform output: [`infra/evidence/terraform-output-full.txt`](evidence/terraform-output-full.txt)
+
+Idempotent plan: [`infra/evidence/idempotent-plan.txt`](evidence/idempotent-plan.txt)
+
+Screenshot required before submission:
+
+```text
+infra/evidence/clean-state-pipeline.png
+```
+
+#### Full IaC coverage proof
+
+Coverage document: [`infra/docs/iac-coverage.md`](docs/iac-coverage.md)
+
+State list: [`infra/evidence/state-list.txt`](evidence/state-list.txt)
+
+Screenshot required before submission:
+
+```text
+infra/evidence/deployed-components.png
+```
+
+---
+
+## Runbook
+
+### 1. Required account permissions
+
+The bootstrap resources must already exist:
+
+- S3 backend bucket: `pdds-2-quarter-project-group-6-tfstate`
+- DynamoDB lock table: `pdds-2-quarter-project-group-6-locks`
+
+The first Delivery 5 apply must be performed by an AWS identity that can create the GitHub OIDC provider and CI role. After that, GitHub Actions should use OIDC through `AWS_CI_ROLE_ARN`.
+
+If the first apply also needs to administer the new KMS key before OIDC is active, pass the bootstrap AWS principal ARN through `terraform_admin_principal_arns`.
+
+Example for the first local apply only:
+
+```hcl
+terraform_admin_principal_arns = ["arn:aws:iam::<account-id>:role/<bootstrap-role-name>"]
+```
+
+### 2. GitHub environments and secrets
+
+Repository or environment variables:
+
+```text
+AWS_CI_ROLE_ARN=<terraform output ci_runner_role_arn>
+```
+
+Repository or environment secrets:
+
+```text
+AWS_REGION=us-west-2
+TICKETFLOW_RUNTIME_SECRET=<strong JWT signing secret>
+```
+
+Local or CI artifact preparation uses:
+
+```bash
+npm run deploy:prepare
+```
+
+Remove these long-lived cloud credentials after OIDC is validated:
+
+```text
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+```
+
+### 3. Domain configuration for TLS
+
+TLS cannot be issued for AWS-owned names such as `*.elb.amazonaws.com`. Configure a domain controlled by the team or request a delegated subdomain from the instructors.
+
+In `envs/dev/dev.tfvars` or `envs/prod/prod.tfvars`:
+
+```hcl
+enable_tls     = true
+domain_name    = "ticketflow.<team-domain>"
+hosted_zone_id = "<route53-hosted-zone-id>"
+```
+
+### 4. Trigger the one-click deployment
+
+From a clean clone:
+
+```bash
+git clone https://github.com/solivalle/pdds-2-quarter-project-group-6.git
+cd pdds-2-quarter-project-group-6
+git checkout main
+git commit --allow-empty -m "delivery 5 clean-state proof"
+git push origin main
+```
+
+GitHub Actions should run:
+
+```text
+terraform init
+terraform plan
+terraform apply
+```
+
+### 5. Verify running components
+
+After the pipeline finishes:
+
+```bash
+cd infra
+terraform output
+terraform state list
+```
+
+Expected component categories:
+
+- networking
+- ingress
+- compute
+- storage
+- database
+- async queue
+- IAM/security
+- observability
+
+### 6. Idempotency check
+
+Push a second no-op commit and verify the plan has no changes:
+
+```bash
+git commit --allow-empty -m "delivery 5 idempotency check"
+git push origin main
+```
+
+Then capture:
+
+```bash
+terraform plan -detailed-exitcode -var-file=envs/dev/dev.tfvars
+```
+
+Exit code `0` means the deployment is idempotent.
+
 ### 1. Compute Deployed Output (`infra/evidence/compute-deployed.txt`)
 
 ```text
@@ -366,4 +551,3 @@ The following pull request demonstrates the `plan-on-PR` workflow execution and 
 ![Ruleset Configuration](evidence/ruleset-config.png)
 
 ![Blocked Merge Request](evidence/ruleset-blocked-merge.png)
-

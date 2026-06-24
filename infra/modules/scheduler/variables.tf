@@ -18,7 +18,7 @@ variable "target_lambda_arn" {
   type        = string
 }
 
-variable "target_lambda_name" {
-  description = "Name of the target Lambda function to invoke"
+variable "scheduler_role_arn" {
+  description = "IAM role ARN assumed by EventBridge Scheduler"
   type        = string
 }
