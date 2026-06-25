@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TicketFlow — Presentación Final | Optimizaciones y Desempeño</title>
+  <meta name="description" content="Presentación final del proyecto TicketFlow — Grupo 6, curso de Optimizaciones y Desempeño. Infraestructura en la nube AWS con pipeline CI/CD completo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================
+       RESET & BASE
+    ============================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:       #060912;
+      --bg-slide:      #0c1220;
+      --bg-card:       #111827;
+      --bg-card-hover: #1a2336;
+      --border:        rgba(99,130,255,0.18);
+      --border-bright: rgba(99,130,255,0.45);
+
+      --blue:    #6382ff;
+      --violet:  #9b67ff;
+      --cyan:    #38bdf8;
+      --emerald: #34d399;
+      --amber:   #fbbf24;
+      --rose:    #f87171;
+
+      --grad-hero: linear-gradient(135deg, #6382ff 0%, #9b67ff 60%, #38bdf8 100%);
+      --grad-card: linear-gradient(135deg, rgba(99,130,255,.12), rgba(155,103,255,.06));
+
+      --text-1: #f0f4ff;
+      --text-2: #8b9dc3;
+      --text-3: #4e6080;
+
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 4px 40px rgba(0,0,0,.55);
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-deep);
+      color: var(--text-1);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ============================================
+       SLIDE ENGINE
+    ============================================ */
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 3rem 4rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(60px);
+      transition: opacity .45s cubic-bezier(.4,0,.2,1), transform .45s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateX(0);
+    }
+    .slide.exit {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ============================================
+       BACKGROUND ORBS
+    ============================================ */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(99,130,255,.22), transparent 70%); top: -200px; right: -100px; }
+    .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(155,103,255,.18), transparent 70%); bottom: -100px; left: -100px; }
+    .orb-3 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(56,189,248,.15), transparent 70%); top: 40%; left: 40%; }
+
+    /* ============================================
+       NAVIGATION
+    ============================================ */
+    #nav {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(12,18,32,.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: .6rem 1.2rem;
+      z-index: 999;
+    }
+    #nav button {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      border-radius: 50px;
+      padding: .4rem 1.2rem;
+      font-family: var(--font-sans);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      letter-spacing: .03em;
+    }
+    #nav button:hover { border-color: var(--blue); color: var(--blue); background: rgba(99,130,255,.08); }
+    #nav button.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    #slide-counter {
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      color: var(--text-3);
+      min-width: 60px;
+      text-align: center;
+    }
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: var(--grad-hero);
+      transition: width .4s ease;
+      z-index: 1000;
+    }
+
+    /* ============================================
+       KEYBOARD HINT
+    ============================================ */
+    #hint {
+      position: fixed;
+      top: 1.2rem; right: 1.5rem;
+      font-size: .7rem;
+      color: var(--text-3);
+      font-family: var(--font-mono);
+      z-index: 999;
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+    }
+    .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px; height: 22px;
+      border: 1px solid var(--text-3);
+      border-radius: 4px;
+      font-size: .65rem;
+    }
+
+    /* ============================================
+       SLIDE CONTENT — SHARED
+    ============================================ */
+    .slide-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .slide-label {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: .6rem;
+    }
+
+    h1.hero-title {
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.05;
+      background: var(--grad-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.2rem;
+    }
+
+    h2.slide-title {
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      background: var(--grad-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h3.section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-1);
+      margin-bottom: .5rem;
+    }
+
+    p.lead {
+      font-size: 1.05rem;
+      color: var(--text-2);
+      line-height: 1.7;
+      max-width: 720px;
+    }
+
+    /* ============================================
+       CARDS
+    ============================================ */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.3rem 1.5rem;
+      transition: border-color .25s, background .25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--grad-card);
+      opacity: 0;
+      transition: opacity .25s;
+      border-radius: inherit;
+    }
+    .card:hover { border-color: var(--border-bright); }
+    .card:hover::before { opacity: 1; }
+
+    .card-accent {
+      border-left: 3px solid var(--blue);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      flex: 1;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      flex: 1;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .8rem;
+    }
+
+    /* ============================================
+       TAGS & BADGES
+    ============================================ */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      padding: .25rem .7rem;
+      border-radius: 50px;
+      border: 1px solid;
+    }
+    .tag-blue   { color: var(--blue);    border-color: rgba(99,130,255,.35);  background: rgba(99,130,255,.08);  }
+    .tag-violet { color: var(--violet);  border-color: rgba(155,103,255,.35); background: rgba(155,103,255,.08); }
+    .tag-cyan   { color: var(--cyan);    border-color: rgba(56,189,248,.35);  background: rgba(56,189,248,.08);  }
+    .tag-emerald{ color: var(--emerald); border-color: rgba(52,211,153,.35);  background: rgba(52,211,153,.08);  }
+    .tag-amber  { color: var(--amber);   border-color: rgba(251,191,36,.35);  background: rgba(251,191,36,.08);  }
+    .tag-rose   { color: var(--rose);    border-color: rgba(248,113,113,.35); background: rgba(248,113,113,.08); }
+
+    /* ============================================
+       COMPONENT PILLS — ARCHITECTURE
+    ============================================ */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: .6rem;
+      margin: 1rem 0;
+    }
+    .arch-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .4rem;
+      padding: .9rem .4rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      font-size: .68rem;
+      font-weight: 600;
+      text-align: center;
+      color: var(--text-2);
+      transition: all .25s;
+      cursor: default;
+    }
+    .arch-pill:hover { border-color: var(--border-bright); color: var(--text-1); transform: translateY(-2px); }
+    .arch-pill .icon { font-size: 1.5rem; }
+    .arch-pill.active-pill { border-color: var(--blue); color: var(--blue); background: rgba(99,130,255,.08); }
+
+    /* ============================================
+       PIPELINE FLOW
+    ============================================ */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      flex-wrap: wrap;
+      margin: .8rem 0;
+    }
+    .pipe-step {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .5rem .9rem;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text-2);
+      white-space: nowrap;
+      transition: all .2s;
+    }
+    .pipe-step:hover { border-color: var(--blue); color: var(--text-1); }
+    .pipe-step .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px var(--emerald);
+    }
+    .pipe-arrow {
+      color: var(--text-3);
+      font-size: 1rem;
+    }
+    .pipe-step.gated { border-color: rgba(251,191,36,.35); color: var(--amber); }
+    .pipe-step.gated .dot { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+
+    /* ============================================
+       CODE BLOCK
+    ============================================ */
+    .code-block {
+      background: #080d1a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.2rem;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      line-height: 1.7;
+      color: #a8b4cf;
+      overflow-x: auto;
+    }
+    .code-block .kw  { color: #9b67ff; }
+    .code-block .str { color: #34d399; }
+    .code-block .cm  { color: #4e6080; }
+    .code-block .attr{ color: #6382ff; }
+    .code-block .val { color: #fbbf24; }
+
+    /* ============================================
+       TABLE
+    ============================================ */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+    }
+    table.data-table th {
+      text-align: left;
+      padding: .6rem .9rem;
+      color: var(--text-3);
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-size: .68rem;
+      border-bottom: 1px solid var(--border);
+    }
+    table.data-table td {
+      padding: .65rem .9rem;
+      color: var(--text-2);
+      border-bottom: 1px solid rgba(99,130,255,.08);
+      vertical-align: top;
+    }
+    table.data-table tr:hover td { background: rgba(99,130,255,.04); }
+    table.data-table td.hl { color: var(--text-1); font-weight: 600; }
+
+    /* ============================================
+       LIST ITEMS
+    ============================================ */
+    .check-list {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .7rem;
+      font-size: .87rem;
+      color: var(--text-2);
+      line-height: 1.5;
+    }
+    .check-item .ci {
+      flex-shrink: 0;
+      font-size: .9rem;
+      margin-top: .05rem;
+    }
+    .check-item strong { color: var(--text-1); }
+
+    /* ============================================
+       STAT NUMBERS
+    ============================================ */
+    .stat-row {
+      display: flex;
+      gap: 1rem;
+      margin: .8rem 0;
+    }
+    .stat {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat .num {
+      font-size: 1.9rem;
+      font-weight: 900;
+      background: var(--grad-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: .25rem;
+    }
+    .stat .lbl { font-size: .72rem; color: var(--text-3); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+    /* ============================================
+       DECISION COMPARISON
+    ============================================ */
+    .vs-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin: .8rem 0;
+    }
+    .vs-label {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-3);
+      text-align: center;
+    }
+    .vs-card {
+      border-radius: var(--radius-sm);
+      padding: 1.1rem 1.3rem;
+      border: 1px solid;
+    }
+    .vs-card.chosen { border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.06); }
+    .vs-card.rejected { border-color: rgba(248,113,113,.25); background: rgba(248,113,113,.04); opacity: .7; }
+    .vs-card .vs-title { font-weight: 700; margin-bottom: .5rem; font-size: .95rem; }
+    .vs-card.chosen .vs-title { color: var(--emerald); }
+    .vs-card.rejected .vs-title { color: var(--rose); }
+
+    /* ============================================
+       SLIDE 1 — COVER
+    ============================================ */
+    #slide-1 {
+      background: linear-gradient(145deg, #060912 0%, #0c1220 50%, #0a0f1e 100%);
+      justify-content: center;
+    }
+    .cover-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: 1.5rem;
+    }
+    .cover-eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 10px var(--blue); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; box-shadow: 0 0 10px var(--blue); } 50% { opacity:.6; box-shadow: 0 0 20px var(--blue); } }
+    .cover-sub {
+      font-size: 1.15rem;
+      color: var(--text-2);
+      margin-bottom: 2.5rem;
+      max-width: 560px;
+      line-height: 1.7;
+    }
+    .team-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .team-pill {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: .5rem 1rem;
+      font-size: .82rem;
+    }
+    .team-pill .avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--grad-hero);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .team-pill .name { color: var(--text-1); font-weight: 600; }
+    .team-pill .id   { color: var(--text-3); font-size: .72rem; }
+    .meta-bar {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: .2rem;
+    }
+    .meta-item .mi-label { font-size: .68rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+    .meta-item .mi-val   { font-size: .9rem; color: var(--text-2); font-weight: 500; }
+
+    /* ============================================
+       ANIMATIONS
+    ============================================ */
+    .slide.active .card,
+    .slide.active .arch-pill,
+    .slide.active .pipe-step,
+    .slide.active .stat {
+      animation: fadeUp .4s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(14px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .slide.active .card:nth-child(1) { animation-delay: .05s; }
+    .slide.active .card:nth-child(2) { animation-delay: .10s; }
+    .slide.active .card:nth-child(3) { animation-delay: .15s; }
+    .slide.active .arch-pill:nth-child(1) { animation-delay: .05s; }
+    .slide.active .arch-pill:nth-child(2) { animation-delay: .08s; }
+    .slide.active .arch-pill:nth-child(3) { animation-delay: .11s; }
+    .slide.active .arch-pill:nth-child(4) { animation-delay: .14s; }
+    .slide.active .arch-pill:nth-child(5) { animation-delay: .17s; }
+    .slide.active .arch-pill:nth-child(6) { animation-delay: .20s; }
+    .slide.active .arch-pill:nth-child(7) { animation-delay: .23s; }
+    .slide.active .pipe-step:nth-child(1) { animation-delay: .04s; }
+    .slide.active .pipe-step:nth-child(3) { animation-delay: .08s; }
+    .slide.active .pipe-step:nth-child(5) { animation-delay: .12s; }
+    .slide.active .pipe-step:nth-child(7) { animation-delay: .16s; }
+    .slide.active .pipe-step:nth-child(9) { animation-delay: .20s; }
+    .slide.active .stat:nth-child(1) { animation-delay: .05s; }
+    .slide.active .stat:nth-child(2) { animation-delay: .10s; }
+    .slide.active .stat:nth-child(3) { animation-delay: .15s; }
+    .slide.active .stat:nth-child(4) { animation-delay: .20s; }
+
+    /* ============================================
+       DIVIDER
+    ============================================ */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1rem 0;
+    }
+
+    /* Slide section indicator */
+    .slide-section {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--violet);
+      margin-bottom: .4rem;
+    }
+    .slide-section::before {
+      content: '';
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: var(--violet);
+      border-radius: 2px;
+    }
+
+    /* scrollable content within a slide */
+    .scroll-area {
+      overflow-y: auto;
+      flex: 1;
+      padding-right: .5rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    /* flex helpers */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .gap-sm { gap: .6rem; }
+    .gap-md { gap: 1rem; }
+    .gap-lg { gap: 1.5rem; }
+    .mt-sm { margin-top: .6rem; }
+    .mt-md { margin-top: 1rem; }
+    .mb-sm { margin-bottom: .6rem; }
+    .flex-1 { flex: 1; }
+    .align-start { align-items: flex-start; }
+
+    /* ============================================
+       PRINT / PDF STYLES
+    ============================================ */
+    @media print {
+      @page {
+        size: 1280px 720px;
+        margin: 0;
+      }
+
+      html, body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #060912 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      #nav, #hint, #progress { display: none !important; }
+
+      .deck {
+        position: static;
+        width: 1280px;
+        height: auto;
+      }
+
+      /* Show all slides stacked, one per page */
+      .slide {
+        position: relative !important;
+        display: flex !important;
+        opacity: 1 !important;
+        transform: none !important;
+        pointer-events: all !important;
+        width: 1280px;
+        height: 720px;
+        page-break-after: always;
+        break-after: page;
+        overflow: hidden;
+        padding: 2.5rem 3.5rem;
+        background: #060912 !important;
+      }
+
+      .slide:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      /* Ensure backgrounds render */
+      .card, .vs-card, .arch-pill, .pipe-step, .stat, .team-pill,
+      .tag, .code-block, .check-item {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* Keep orbs visible */
+      .orb {
+        display: block !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* Disable animations for print */
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      /* Gradient text fallback for print */
+      h1.hero-title,
+      h2.slide-title {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div id="progress"></div>
+
+<!-- Keyboard hint -->
+<div id="hint">
+  <span class="key">←</span>
+  <span class="key">→</span>
+  <span style="margin-left:.3rem">Navegar diapositivas</span>
+</div>
+
+<!-- Navigation -->
+<div id="nav">
+  <button id="btn-prev" onclick="prev()">← Anterior</button>
+  <span id="slide-counter">1 / 11</span>
+  <button id="btn-next" onclick="next()">Siguiente →</button>
+</div>
+
+<div class="deck">
+
+  <!-- ================================================
+       SLIDE 1 — PORTADA
+  ================================================ -->
+  <div class="slide active" id="slide-1">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="slide-inner" style="justify-content:center;">
+      <div class="cover-eyebrow">
+        <div class="dot"></div>
+        <span class="tag tag-blue">Presentación Final · Junio 2026</span>
+        <span class="tag tag-violet">Sesión 10 · En Presencia</span>
+      </div>
+
+      <h1 class="hero-title">TicketFlow<br/>en la Nube AWS</h1>
+
+      <p class="cover-sub">
+        Plataforma de gestión de tickets de soporte — desplegada sobre una arquitectura de 7 componentes
+        con pipeline CI/CD completo, seguridad OIDC y observabilidad en tiempo real.
+      </p>
+
+      <div class="team-row">
+        <div class="team-pill">
+          <div class="avatar">FM</div>
+          <div><div class="name">Francisco Magdiel Asicona Mateo</div><div class="id">26006399</div></div>
+        </div>
+        <div class="team-pill">
+          <div class="avatar">SG</div>
+          <div><div class="name">Sergio Geovany García Smith</div><div class="id">25008130</div></div>
+        </div>
+        <div class="team-pill">
+          <div class="avatar">SO</div>
+          <div><div class="name">Sergio Rolando Oliva del Valle</div><div class="id">26005694</div></div>
+        </div>
+      </div>
+
+      <div class="meta-bar">
+        <div class="meta-item"><span class="mi-label">Curso</span><span class="mi-val">Optimizaciones y Desempeño — Sección A</span></div>
+        <div class="meta-item"><span class="mi-label">Grupo</span><span class="mi-val">Grupo #6</span></div>
+        <div class="meta-item"><span class="mi-label">Ponderación</span><span class="mi-val">15% de la nota final</span></div>
+        <div class="meta-item"><span class="mi-label">Cloud</span><span class="mi-val">AWS · us-west-2 (Oregon)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 2 — CONTEXTO DEL PROYECTO (Segmento A)
+  ================================================ -->
+  <div class="slide" id="slide-2">
+    <div class="orb orb-1"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Segmento A — Contexto del Proyecto</div>
+      <h2 class="slide-title">¿Qué es TicketFlow?</h2>
+      <p class="lead" style="margin-bottom:1.2rem;">
+        API REST de gestión de soporte técnico — permite a usuarios crear tickets, adjuntar archivos,
+        asignarlos a agentes y recibir notificaciones asíncronas. Backend Node.js/TypeScript sobre EC2 privada.
+      </p>
+
+      <!-- 7-Component Architecture -->
+      <div class="arch-grid">
+        <div class="arch-pill active-pill">
+          <span class="icon">🌐</span>
+          <span>Internet<br/>ALB</span>
+        </div>
+        <div class="arch-pill active-pill">
+          <span class="icon">⚖️</span>
+          <span>Ingress<br/>ALB :80</span>
+        </div>
+        <div class="arch-pill active-pill">
+          <span class="icon">🖥️</span>
+          <span>Compute<br/>EC2 t4g.nano</span>
+        </div>
+        <div class="arch-pill active-pill">
+          <span class="icon">🗄️</span>
+          <span>Database<br/>DynamoDB</span>
+        </div>
+        <div class="arch-pill active-pill">
+          <span class="icon">🗳️</span>
+          <span>Async<br/>SQS Queue</span>
+        </div>
+        <div class="arch-pill active-pill">
+          <span class="icon">🪣</span>
+          <span>Storage<br/>S3 Buckets</span>
+        </div>
+        <div class="arch-pill active-pill">
+          <span class="icon">🔒</span>
+          <span>IAM<br/>OIDC · KMS</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:.5rem;">
+        <div class="card card-accent">
+          <h3 class="section-title" style="margin-bottom:.7rem;">Funcionalidades clave</h3>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">🎟️</span><span><strong>CRUD de tickets</strong> con roles de usuario, agente, supervisor y admin</span></div>
+            <div class="check-item"><span class="ci">📎</span><span><strong>Adjuntos</strong> cifrados en S3 con pre-signed URLs</span></div>
+            <div class="check-item"><span class="ci">📨</span><span><strong>Cola SQS</strong> para procesamiento asíncrono de mensajes</span></div>
+            <div class="check-item"><span class="ci">🔔</span><span><strong>Notificaciones</strong> en tiempo real via WebSocket</span></div>
+            <div class="check-item"><span class="ci">📊</span><span><strong>Reportes</strong> con métricas de soporte y CloudWatch</span></div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <h3 class="section-title" style="margin-bottom:.7rem;">Stack tecnológico</h3>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">🟢</span><span><strong>Node.js 20 / TypeScript</strong> — Express + Pino logging</span></div>
+            <div class="check-item"><span class="ci">🏗️</span><span><strong>Terraform 1.10</strong> — IaC modular (11 módulos)</span></div>
+            <div class="check-item"><span class="ci">🤖</span><span><strong>GitHub Actions</strong> — CI/CD con 6 jobs encadenados</span></div>
+            <div class="check-item"><span class="ci">☁️</span><span><strong>AWS</strong> — EC2 · DynamoDB · S3 · SQS · KMS · CloudWatch</span></div>
+            <div class="check-item"><span class="ci">🔑</span><span><strong>OIDC Federation</strong> — sin credenciales estáticas en CI</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 3 — HIGHLIGHT D3: NETWORKING / INGRESS
+  ================================================ -->
+  <div class="slide" id="slide-3">
+    <div class="orb orb-1"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Segmento B · Highlight #1 — Entrega 3</div>
+      <h2 class="slide-title">Red & Ingress: EC2 Privada + ALB</h2>
+
+      <div class="vs-row" style="margin-bottom:.8rem;">
+        <div class="vs-card rejected">
+          <div class="vs-title">❌ Alternativa Descartada</div>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">🚨</span><span>EC2 en subred pública con IP elástica</span></div>
+            <div class="check-item"><span class="ci">🚨</span><span>Puerto 8080 expuesto directamente a Internet</span></div>
+            <div class="check-item"><span class="ci">🚨</span><span>Sin separación entre capa pública y aplicación</span></div>
+          </div>
+        </div>
+        <div class="vs-label">VS</div>
+        <div class="vs-card chosen">
+          <div class="vs-title">✅ Decisión Adoptada</div>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">🛡️</span><span>EC2 en subred privada <code>10.0.11.0/24</code> — sin IP pública</span></div>
+            <div class="check-item"><span class="ci">🛡️</span><span>ALB en subnets públicas como único punto de entrada (puerto 80)</span></div>
+            <div class="check-item"><span class="ci">🛡️</span><span>App Security Group: solo acepta tráfico del SG del ALB</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:.5rem;">
+        <div class="card card-accent">
+          <h3 class="section-title">Diseño de red — VPC <code>10.0.0.0/16</code></h3>
+          <div class="code-block" style="margin-top:.6rem;">
+<span class="cm"># Subnets públicas (ALB + NAT Gateway)</span>
+Public A:  <span class="val">10.0.1.0/24</span>  us-west-2a
+Public B:  <span class="val">10.0.2.0/24</span>  us-west-2b
+
+<span class="cm"># Subnets privadas (EC2 Application)</span>
+Private A: <span class="val">10.0.11.0/24</span> us-west-2a ← EC2
+Private B: <span class="val">10.0.12.0/24</span> us-west-2b  (crecimiento)
+          </div>
+        </div>
+        <div class="card card-accent">
+          <h3 class="section-title">NAT Gateway vs VPC Endpoints</h3>
+          <div class="check-list" style="margin-top:.6rem;">
+            <div class="check-item"><span class="ci">✅</span><span><strong>NAT Gateway:</strong> elegido por simplicidad y flexibilidad — permite instalar dependencias, acceder APIs externas y hacer bootstrap</span></div>
+            <div class="check-item"><span class="ci">⚠️</span><span><strong>VPC Endpoints</strong> descartados: no permiten salida a Internet para bootstrap de EC2 ni consumo de APIs externas</span></div>
+            <div class="check-item"><span class="ci">📝</span><span>Para producción real: complementar con Gateway Endpoints para S3 y DynamoDB reduciendo tráfico y costo</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-row" style="margin-top:.7rem;">
+        <div class="stat"><div class="num">2</div><div class="lbl">Availability Zones</div></div>
+        <div class="stat"><div class="num">4</div><div class="lbl">Subnets (2 pub + 2 priv)</div></div>
+        <div class="stat"><div class="num">0</div><div class="lbl">IPs públicas en EC2</div></div>
+        <div class="stat"><div class="num">1</div><div class="lbl">Punto de entrada (ALB)</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 4 — HIGHLIGHT D4: PIPELINE CI/CD
+  ================================================ -->
+  <div class="slide" id="slide-4">
+    <div class="orb orb-1"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Segmento B · Highlight #2 — Entrega 4</div>
+      <h2 class="slide-title">Pipeline CI/CD con Gate de Aprobación</h2>
+
+      <p class="lead" style="margin-bottom:1rem;">
+        El workflow <code>terraform-ci.yml</code> orquesta 6 jobs encadenados. La decisión clave:
+        <strong>separar el plan del apply</strong> y exigir aprobación explícita antes del deploy a producción.
+      </p>
+
+      <!-- Pipeline flow -->
+      <div class="pipeline">
+        <div class="pipe-step"><span class="dot"></span>terraform fmt</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="dot"></span>terraform validate</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="dot"></span>terraform plan (dev)</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step gated"><span class="dot"></span>dev apply <span class="tag tag-blue" style="font-size:.65rem;padding:.15rem .5rem;margin-left:.3rem;">env: dev</span></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="dot"></span>validate prod plan</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step gated"><span class="dot"></span>prod apply <span class="tag tag-amber" style="font-size:.65rem;padding:.15rem .5rem;margin-left:.3rem;">🔐 gate</span></div>
+      </div>
+
+      <div class="grid-2" style="margin-top:.8rem;">
+        <div class="card card-accent">
+          <h3 class="section-title">Decisión: Plan separado del Apply</h3>
+          <div class="check-list" style="margin-top:.6rem;">
+            <div class="check-item"><span class="ci">✅</span><span><strong>Plan en PR:</strong> genera <code>tfplan-dev</code> y lo sube como artefacto — el apply descarga el plan exacto aprobado</span></div>
+            <div class="check-item"><span class="ci">✅</span><span><strong>Sin re-planificación:</strong> elimina la posibilidad de que el apply ejecute cambios distintos a los revisados</span></div>
+            <div class="check-item"><span class="ci">❌</span><span><strong>Alternativa descartada:</strong> plan + apply en un solo job haría imposible auditar qué se aprobó</span></div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <h3 class="section-title">OIDC — Sin credenciales estáticas</h3>
+          <div class="code-block" style="margin-top:.6rem;">
+<span class="kw">- name:</span> <span class="str">Configure AWS Credentials</span>
+  <span class="kw">uses:</span> aws-actions/configure-aws-credentials@v4
+  <span class="kw">with:</span>
+    <span class="attr">role-to-assume:</span> <span class="val">${{ vars.AWS_CI_ROLE_ARN }}</span>
+    <span class="attr">aws-region:</span>    <span class="val">us-west-2</span>
+<span class="cm">
+# Sujeto OIDC restringido a main:
+# repo:solivalle/..:ref:refs/heads/main</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:.8rem;padding:1rem 1.3rem;">
+        <div style="display:flex;gap:1.5rem;align-items:center;">
+          <span class="tag tag-amber">🔐 Environment Gate</span>
+          <span style="color:var(--text-2);font-size:.85rem;">El job <code>prod_apply</code> usa <code>environment: prod</code> — GitHub pausa la ejecución y requiere aprobación manual de un revisor autorizado antes de desplegar.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 5 — HIGHLIGHT D5: SEGURIDAD / OBSERVABILIDAD
+  ================================================ -->
+  <div class="slide" id="slide-5">
+    <div class="orb orb-1"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Segmento B · Highlight #3 — Entrega 5</div>
+      <h2 class="slide-title">Seguridad: OIDC + KMS + Secrets Manager</h2>
+
+      <div class="grid-3" style="margin-bottom:.8rem;">
+        <div class="card card-accent">
+          <div class="tag tag-violet" style="margin-bottom:.6rem;">🔑 OIDC Federation</div>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">✅</span><span>CI Runner Role asume credenciales temporales via token OIDC de GitHub Actions</span></div>
+            <div class="check-item"><span class="ci">✅</span><span>Trust policy scoped a <code>refs/heads/main</code> — PRs no obtienen rol de deploy</span></div>
+            <div class="check-item"><span class="ci">❌</span><span>Credenciales <code>AWS_ACCESS_KEY_ID</code> y <code>SECRET</code> eliminadas del repositorio</span></div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <div class="tag tag-cyan" style="margin-bottom:.6rem;">🗝️ KMS — CMK por entorno</div>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">✅</span><span>Una CMK por entorno (<code>alias/ticketflow-dev-cmk</code>)</span></div>
+            <div class="check-item"><span class="ci">✅</span><span>Cifra: S3 buckets · DynamoDB · Secrets Manager</span></div>
+            <div class="check-item"><span class="ci">⚖️</span><span>CMK compartida vs por-servicio: elegida compartida para reducir overhead operacional en este proyecto</span></div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <div class="tag tag-emerald" style="margin-bottom:.6rem;">🔒 Secrets Manager</div>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">✅</span><span><code>JWT_SECRET</code> almacenado en AWS Secrets Manager — Terraform solo inyecta el ARN a EC2</span></div>
+            <div class="check-item"><span class="ci">✅</span><span>Bootstrap: EC2 obtiene el secreto en arranque y lo escribe en <code>/etc/ticketflow.env</code> con permisos <code>0600</code></span></div>
+            <div class="check-item"><span class="ci">❌</span><span>Patrón eliminado: variables plaintext en workflow YAML</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:1rem 1.5rem;">
+        <h3 class="section-title" style="margin-bottom:.6rem;">Observabilidad — módulo <code>infra/modules/observability/</code></h3>
+        <div class="grid-4">
+          <div style="text-align:center;">
+            <div style="font-size:1.4rem;margin-bottom:.3rem;">📊</div>
+            <div style="font-size:.75rem;color:var(--text-2);">CloudWatch Dashboard<br/>ALB · Lambda · SQS</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:1.4rem;margin-bottom:.3rem;">🚨</div>
+            <div style="font-size:.75rem;color:var(--text-2);">Alerta ALB 5XX<br/>Umbral: ≥ 1 error</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:1.4rem;margin-bottom:.3rem;">λ</div>
+            <div style="font-size:.75rem;color:var(--text-2);">Lambda Health Check<br/>Programada (Scheduler)</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:1.4rem;margin-bottom:.3rem;">💰</div>
+            <div style="font-size:.75rem;color:var(--text-2);">Budget $25/mes<br/>Alerta al 80%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 6 — REFLEXIÓN & TRADE-OFF (Segmento C)
+  ================================================ -->
+  <div class="slide" id="slide-6">
+    <div class="orb orb-2"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Segmento C — Reflexión & Trade-off</div>
+      <h2 class="slide-title">Guardrails y Decisiones Arquitectónicas</h2>
+
+      <div class="grid-2">
+        <div class="flex flex-col gap-md">
+          <div class="card card-accent">
+            <div class="tag tag-rose" style="margin-bottom:.7rem;">🛑 Guardrail: Branch Ruleset de GitHub</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">🔐</span><span><strong>Mecanismo:</strong> Branch protection ruleset en <code>main</code> — requiere Pull Request antes de hacer merge; pushes directos son rechazados</span></div>
+              <div class="check-item"><span class="ci">⚙️</span><span><strong>Required checks:</strong> <code>terraform fmt</code>, <code>terraform validate</code>, <code>terraform plan</code> deben pasar — si fallan, el merge está bloqueado</span></div>
+              <div class="check-item"><span class="ci">🎯</span><span><strong>Cómo atrapa errores:</strong> Un archivo mal formateado o con error de sintaxis en Terraform provoca que <code>fmt</code> o <code>validate</code> fallen y el PR queda bloqueado automáticamente</span></div>
+            </div>
+          </div>
+
+          <div class="card card-accent">
+            <div class="tag tag-amber" style="margin-bottom:.7rem;">🔐 Guardrail: Environment Approval Gate</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">⚙️</span><span><strong>Mecanismo:</strong> Job <code>prod_apply</code> con <code>environment: prod</code> — GitHub pausa el workflow y espera aprobación explícita del revisor requerido</span></div>
+              <div class="check-item"><span class="ci">🎯</span><span><strong>Sin gate:</strong> cualquier push a <code>main</code> desplegaría automáticamente a producción sin revisión humana</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-md">
+          <div class="card card-accent">
+            <div class="tag tag-cyan" style="margin-bottom:.7rem;">⚖️ Trade-off Arquitectónico: EC2 vs Lambda</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">✅</span><span><strong>EC2 elegida:</strong> la aplicación mantiene estado de conexiones WebSocket para notificaciones en tiempo real — Lambda con cold starts rompería la experiencia</span></div>
+              <div class="check-item"><span class="ci">❌</span><span><strong>Lambda descartada:</strong> cold starts en tráfico esporádico + imposibilidad de mantener conexiones WebSocket persistentes</span></div>
+              <div class="check-item"><span class="ci">⚠️</span><span><strong>Costo asumido:</strong> costo fijo de EC2 <code>t4g.nano</code> mitigado por arquitectura ARM64 (~$3.5/mes)</span></div>
+            </div>
+          </div>
+
+          <div class="card card-accent">
+            <div class="tag tag-violet" style="margin-bottom:.7rem;">⚖️ Trade-off: CMK compartida vs por-servicio</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">✅</span><span><strong>CMK compartida:</strong> una clave por entorno con key policy restrictiva — cifra S3, DynamoDB y Secrets Manager con menor overhead operacional</span></div>
+              <div class="check-item"><span class="ci">❌</span><span><strong>Por-servicio descartado:</strong> 3+ claves = gestión de políticas multiplicada sin ganancia proporcional para este proyecto</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 7 — LIVE CHANGE: MENÚ DE CANDIDATOS (Segmento D prep)
+  ================================================ -->
+  <div class="slide" id="slide-7">
+    <div class="orb orb-1"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Segmento D — Cambio en Vivo: Menú de Candidatos</div>
+      <h2 class="slide-title">3 Áreas Candidatas Pre-enviadas</h2>
+
+      <div class="flex flex-col gap-md flex-1">
+
+        <div class="card card-accent">
+          <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem;">
+            <span class="tag tag-blue">Candidato #1</span>
+            <h3 class="section-title" style="margin-bottom:0;">Campo calculado en GET /tickets</h3>
+          </div>
+          <div class="grid-2" style="gap:.6rem;">
+            <div class="check-list">
+              <div class="check-item"><span class="ci">📍</span><span><strong>Endpoint:</strong> <code>GET /api/tickets</code> — handler: <code>ticket-routes.ts</code> → <code>TicketService.listTickets()</code></span></div>
+              <div class="check-item"><span class="ci">👁️</span><span><strong>Comportamiento observable:</strong> añadir campo <code>ticket_age_days</code> derivado de <code>createdAt</code></span></div>
+            </div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">🔍</span><span><strong>Verificación:</strong> <code>curl GET /api/tickets</code> — campo nuevo en cada objeto del array</span></div>
+              <div class="check-item"><span class="ci">📐</span><span><strong>Alcance:</strong> ~3 líneas en el mapper de la respuesta</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-accent">
+          <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem;">
+            <span class="tag tag-violet">Candidato #2</span>
+            <h3 class="section-title" style="margin-bottom:0;">Validación de entrada en POST /tickets</h3>
+          </div>
+          <div class="grid-2" style="gap:.6rem;">
+            <div class="check-list">
+              <div class="check-item"><span class="ci">📍</span><span><strong>Endpoint:</strong> <code>POST /api/tickets</code> — handler: <code>ticket-routes.ts</code> + <code>schemas.ts</code></span></div>
+              <div class="check-item"><span class="ci">👁️</span><span><strong>Observable:</strong> campo requerido ausente → HTTP 400 con body descriptivo</span></div>
+            </div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">🔍</span><span><strong>Verificación:</strong> <code>curl -d '{}' POST /api/tickets</code> → responde <code>400</code> con mensaje de campo faltante</span></div>
+              <div class="check-item"><span class="ci">📐</span><span><strong>Alcance:</strong> 1 campo adicional en el schema Zod existente</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-accent">
+          <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem;">
+            <span class="tag tag-cyan">Candidato #3</span>
+            <h3 class="section-title" style="margin-bottom:0;">Parámetro de filtro en GET /tickets</h3>
+          </div>
+          <div class="grid-2" style="gap:.6rem;">
+            <div class="check-list">
+              <div class="check-item"><span class="ci">📍</span><span><strong>Endpoint:</strong> <code>GET /api/tickets?status=open</code> — handler: <code>listTicketsSchema</code> + <code>TicketService</code></span></div>
+              <div class="check-item"><span class="ci">👁️</span><span><strong>Observable:</strong> filtrar tickets por estado (open/closed/pending) — lista reducida según parámetro</span></div>
+            </div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">🔍</span><span><strong>Verificación:</strong> <code>curl GET /api/tickets?status=open</code> vs sin parámetro — diferencia en conteo</span></div>
+              <div class="check-item"><span class="ci">📐</span><span><strong>Alcance:</strong> campo en schema + condición en query DynamoDB</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 8 — LIVE CHANGE: IMPLEMENTACIÓN (Segmento D)
+  ================================================ -->
+  <div class="slide" id="slide-8">
+    <div class="orb orb-2"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Segmento D — Cambio en Vivo: Implementación</div>
+      <h2 class="slide-title">El Instructor Asigna — El Equipo Implementa</h2>
+
+      <div class="grid-2" style="margin-bottom:.8rem;">
+        <div class="card card-accent">
+          <h3 class="section-title" style="margin-bottom:.7rem;">🔄 Secuencia de ejecución</h3>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">1️⃣</span><span>Instructor asigna el comportamiento exacto a implementar</span></div>
+            <div class="check-item"><span class="ci">2️⃣</span><span>Crear rama: <code>git checkout -b feature/live-change</code></span></div>
+            <div class="check-item"><span class="ci">3️⃣</span><span>Implementar con asistencia de IA en el handler correcto</span></div>
+            <div class="check-item"><span class="ci">4️⃣</span><span>Commit + push: <code>git push origin feature/live-change</code></span></div>
+            <div class="check-item"><span class="ci">5️⃣</span><span>Abrir Pull Request apuntando a <code>main</code></span></div>
+            <div class="check-item"><span class="ci">6️⃣</span><span>CI pipeline arranca — Parte 1 concluye aquí</span></div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <h3 class="section-title" style="margin-bottom:.7rem;">⏱️ Interludio del Pipeline</h3>
+          <div class="check-list">
+            <div class="check-item"><span class="ci">✅</span><span><code>terraform fmt</code> — verifica formato de todos los archivos .tf</span></div>
+            <div class="check-item"><span class="ci">✅</span><span><code>terraform validate</code> — valida sintaxis y referencias</span></div>
+            <div class="check-item"><span class="ci">✅</span><span><code>terraform plan</code> — genera plan contra estado dev en S3</span></div>
+            <div class="check-item"><span class="ci">🔍</span><span>PR review — aprobación requerida por CODEOWNER</span></div>
+            <div class="check-item"><span class="ci">🚀</span><span>Merge → auto-deploy a entorno dev</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:1.1rem 1.5rem;">
+        <h3 class="section-title" style="margin-bottom:.6rem;">📋 Líneas base (antes del cambio)</h3>
+        <p style="color:var(--text-2);font-size:.85rem;line-height:1.6;">
+          Antes de implementar: ejecutar <code>curl -H "Authorization: Bearer $TOKEN" $BASE_URL/api/tickets</code>
+          y capturar la respuesta actual. Esta línea base es el <strong>"antes"</strong> con el que se contrastará el resultado en el Segmento E.
+          Sin línea base demostrada, no hay prueba del cambio.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 9 — GATE, DEPLOY & VERIFY (Segmento E)
+  ================================================ -->
+  <div class="slide" id="slide-9">
+    <div class="orb orb-1"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Segmento E — Gate · Deploy · Verificación</div>
+      <h2 class="slide-title">Navegando el Pipeline Completo en Vivo</h2>
+
+      <div class="pipeline" style="margin-bottom:.8rem;">
+        <div class="pipe-step"><span class="dot"></span>✅ Required checks OK</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="dot"></span>✅ PR Review aprobado</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="dot"></span>✅ Merge a main</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="dot"></span>✅ Auto-deploy dev</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step gated"><span class="dot"></span>🔐 Gate staging</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="dot"></span>🚀 Deploy staging</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="dot"></span>🔍 Verificar endpoint</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="flex flex-col gap-md">
+          <div class="card card-accent">
+            <h3 class="section-title" style="margin-bottom:.7rem;">Durante el gate de staging</h3>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">1️⃣</span><span>Navegar a Actions → PR completado → confirmar todos los checks verdes</span></div>
+              <div class="check-item"><span class="ci">2️⃣</span><span>Confirmar que el dev deploy completó exitosamente</span></div>
+              <div class="check-item"><span class="ci">3️⃣</span><span><strong>Un compañero aprueba el gate de staging en vivo</strong> durante la presentación</span></div>
+              <div class="check-item"><span class="ci">4️⃣</span><span>Narrar cada paso mientras el pipeline despliega el nuevo image</span></div>
+            </div>
+          </div>
+          <div class="card card-accent">
+            <div class="tag tag-amber" style="margin-bottom:.6rem;">⚠️ Si el pipeline va en rojo</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">📖</span><span>Leer el log de error — diagnosticar el problema en voz alta</span></div>
+              <div class="check-item"><span class="ci">🔧</span><span>Aplicar fix en la misma rama o hacer rollback</span></div>
+              <div class="check-item"><span class="ci">❌</span><span>Nunca: ignorar el error, pedir que se omita, deshabilitar el check</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card card-accent">
+          <h3 class="section-title" style="margin-bottom:.7rem;">Verificación del cambio — Antes vs Después</h3>
+          <div class="code-block">
+<span class="cm"># ANTES del cambio:</span>
+curl -H <span class="str">"Authorization: Bearer $TOKEN"</span> \
+  $STAGING_URL/api/tickets
+
+<span class="cm"># → Respuesta SIN el nuevo campo</span>
+
+
+<span class="cm"># DESPUÉS del deploy:</span>
+curl -H <span class="str">"Authorization: Bearer $TOKEN"</span> \
+  $STAGING_URL/api/tickets
+
+<span class="cm"># → Respuesta CON el nuevo comportamiento</span>
+<span class="cm"># → Contraste demostrado en vivo 🎯</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 10 — Q&A / COMPRENSIÓN CONCEPTUAL
+  ================================================ -->
+  <div class="slide" id="slide-10">
+    <div class="orb orb-2"></div>
+    <div class="slide-inner">
+      <div class="slide-section">Q&A — Comprensión Conceptual del Equipo</div>
+      <h2 class="slide-title">Preguntas que Todo Miembro Debe Responder</h2>
+
+      <div class="grid-2">
+        <div class="flex flex-col gap-sm">
+          <div class="card card-accent">
+            <div class="tag tag-rose" style="margin-bottom:.5rem;">Branch Ruleset</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">❓</span><span>¿Por qué el ruleset impide el merge cuando un check falla pero un required check solo no lo hace?</span></div>
+              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> El ruleset define quién puede hacer merge y bajo qué condiciones — los required checks son la condición técnica, el ruleset es el mecanismo de enforcement</span></div>
+            </div>
+          </div>
+          <div class="card card-accent">
+            <div class="tag tag-cyan" style="margin-bottom:.5rem;">OIDC Trust Policy</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">❓</span><span>¿Por qué el OIDC está restringido a <code>refs/heads/main</code>?</span></div>
+              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> Solo main debe desplegar infraestructura — PRs y ramas de feature corren validación local sin asumir el rol de CI, evitando deploys no controlados</span></div>
+            </div>
+          </div>
+          <div class="card card-accent">
+            <div class="tag tag-violet" style="margin-bottom:.5rem;">Terraform Plan</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">❓</span><span>¿Por qué el plan se ejecuta contra el estado de staging y no dev?</span></div>
+              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> El workspace <code>prod</code> tiene su propio estado remoto en S3 — planear contra dev sería planear contra infraestructura diferente</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-sm">
+          <div class="card card-accent">
+            <div class="tag tag-amber" style="margin-bottom:.5rem;">Environment Gate</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">❓</span><span>¿Qué pasaría si removemos el gate de aprobación de staging?</span></div>
+              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> Todo merge a main desplegaría automáticamente a producción sin revisión humana — el gate es la barrera de control manual</span></div>
+            </div>
+          </div>
+          <div class="card card-accent">
+            <div class="tag tag-blue" style="margin-bottom:.5rem;">Handler de la Aplicación</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">❓</span><span>¿Por qué el handler asignado es el lugar correcto para el cambio?</span></div>
+              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> La capa de rutas → service → data repository es responsabilidad separada — el cambio observable en la respuesta vive en la capa de servicio o en el mapper de respuesta</span></div>
+            </div>
+          </div>
+          <div class="card card-accent">
+            <div class="tag tag-emerald" style="margin-bottom:.5rem;">Código generado por IA</div>
+            <div class="check-list">
+              <div class="check-item"><span class="ci">❓</span><span>¿Qué hace exactamente la función que generó la IA?</span></div>
+              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> Todo miembro debe poder explicar línea por línea el código generado — el asistente escribe, el equipo comprende y defiende</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================
+       SLIDE 11 — CIERRE
+  ================================================ -->
+  <div class="slide" id="slide-11">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="slide-inner" style="justify-content:center;align-items:center;text-align:center;">
+      <div class="tag tag-emerald" style="margin-bottom:1.5rem;font-size:.8rem;">✅ Listo para presentar</div>
+      <h1 class="hero-title" style="text-align:center;">¡A demostrar<br/>que funciona!</h1>
+      <p style="color:var(--text-2);font-size:1.1rem;max-width:600px;line-height:1.7;margin-bottom:2rem;">
+        El pipeline es el producto. La presentación no es un slide show —
+        es una demostración de que el sistema opera correctamente bajo condiciones reales.
+      </p>
+      <div class="stat-row" style="max-width:640px;width:100%;">
+        <div class="stat"><div class="num">7</div><div class="lbl">Componentes</div></div>
+        <div class="stat"><div class="num">6</div><div class="lbl">Jobs CI/CD</div></div>
+        <div class="stat"><div class="num">11</div><div class="lbl">Módulos Terraform</div></div>
+        <div class="stat"><div class="num">0</div><div class="lbl">Credenciales estáticas</div></div>
+      </div>
+      <div style="margin-top:2rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <span class="tag tag-blue">Grupo #6 · Sección A</span>
+        <span class="tag tag-violet">AWS · us-west-2</span>
+        <span class="tag tag-emerald">Junio 25, 2026</span>
+        <span class="tag tag-cyan">TicketFlow</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .deck -->
+
+<script>
+  const TOTAL = 11;
+  let current = 1;
+
+  const slides = () => document.querySelectorAll('.slide');
+  const counter = document.getElementById('slide-counter');
+  const progress = document.getElementById('progress');
+
+  function goTo(n) {
+    if (n < 1 || n > TOTAL) return;
+    const prev = document.getElementById(`slide-${current}`);
+    prev.classList.remove('active');
+    prev.classList.add('exit');
+    setTimeout(() => prev.classList.remove('exit'), 500);
+
+    current = n;
+    const next = document.getElementById(`slide-${current}`);
+    next.classList.add('active');
+
+    counter.textContent = `${current} / ${TOTAL}`;
+    progress.style.width = `${(current / TOTAL) * 100}%`;
+
+    // update nav buttons
+    document.getElementById('btn-prev').classList.toggle('active', false);
+    document.getElementById('btn-next').classList.toggle('active', false);
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+  });
+
+  // Touch / swipe
+  let touchX = 0;
+  document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
+  });
+
+  // Init progress
+  progress.style.width = `${(1 / TOTAL) * 100}%`;
+</script>
+</body>
+</html>
