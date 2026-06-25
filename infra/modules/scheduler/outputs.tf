@@ -10,5 +10,5 @@ output "scheduler_name" {
 
 output "scheduler_role_arn" {
   description = "The ARN of the scheduler IAM role."
-  value       = aws_iam_role.scheduler.arn
+  value       = var.scheduler_role_arn
 }

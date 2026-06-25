@@ -59,11 +59,12 @@ resource "aws_s3_object" "project" {
 }
 
 resource "aws_instance" "this" {
-  ami                    = var.ami_id
-  instance_type          = var.instance_type
-  iam_instance_profile   = var.iam_instance_profile_name
-  vpc_security_group_ids = [var.app_sg_id]
-  subnet_id              = var.subnet_id
+  ami                         = var.ami_id
+  instance_type               = var.instance_type
+  iam_instance_profile        = var.iam_instance_profile_name
+  vpc_security_group_ids      = [var.app_sg_id]
+  subnet_id                   = var.subnet_id
+  user_data_replace_on_change = true
 
   depends_on = [
     aws_s3_object.project
@@ -143,7 +144,7 @@ EnvironmentFile=/etc/ticketflow.env
 Environment=DATA_STORE=dynamodb
 Environment=ATTACHMENT_STORE=s3
 Environment=SLA_POLICY_PRESET=demo
-Environment=SLA_JOB_CRON=* * * * *
+Environment="SLA_JOB_CRON=* * * * *"
 Environment=DYNAMODB_TICKETS_TABLE=${var.table_name}
 Environment=S3_ATTACHMENTS_BUCKET=${var.storage_bucket_name}
 Environment=QUEUE_URL=${var.queue_url}

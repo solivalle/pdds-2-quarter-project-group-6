@@ -16,6 +16,15 @@ resource "aws_kms_key" "this" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "EnableIamUserPermissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
         Sid    = "AllowCiKeyAdministration"
         Effect = "Allow"
         Principal = {
@@ -26,6 +35,7 @@ resource "aws_kms_key" "this" {
           "kms:DeleteAlias",
           "kms:DescribeKey",
           "kms:EnableKeyRotation",
+          "kms:GetKeyRotationStatus",
           "kms:GetKeyPolicy",
           "kms:PutKeyPolicy",
           "kms:ScheduleKeyDeletion",
@@ -61,7 +71,7 @@ resource "aws_kms_key" "this" {
         Resource = "*"
         Condition = {
           StringEquals = {
-            "kms:ViaService" = "secretsmanager.${data.aws_region.current.name}.amazonaws.com"
+            "kms:ViaService"    = "secretsmanager.${data.aws_region.current.name}.amazonaws.com"
             "kms:CallerAccount" = data.aws_caller_identity.current.account_id
           }
         }
@@ -80,7 +90,7 @@ resource "aws_kms_key" "this" {
         Resource = "*"
         Condition = {
           StringEquals = {
-            "kms:ViaService" = "dynamodb.${data.aws_region.current.name}.amazonaws.com"
+            "kms:ViaService"    = "dynamodb.${data.aws_region.current.name}.amazonaws.com"
             "kms:CallerAccount" = data.aws_caller_identity.current.account_id
           }
         }
@@ -99,7 +109,7 @@ resource "aws_kms_key" "this" {
         Resource = "*"
         Condition = {
           StringEquals = {
-            "kms:ViaService" = "s3.${data.aws_region.current.name}.amazonaws.com"
+            "kms:ViaService"    = "s3.${data.aws_region.current.name}.amazonaws.com"
             "kms:CallerAccount" = data.aws_caller_identity.current.account_id
           }
         }
