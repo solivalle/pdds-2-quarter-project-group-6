@@ -9,13 +9,13 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 }
 
 locals {
-  name_prefix          = "${var.project_name}-${var.environment}"
-  storage_objects_arn  = "${var.storage_bucket_arn}/*"
-  app_objects_arn      = "${var.app_bucket_arn}/*"
-  github_main_subject  = "repo:${var.github_repository}:ref:refs/heads/main"
-  backend_log_streams  = "${var.backend_log_group_arn}:log-stream:*"
-  lambda_log_streams   = "${var.lambda_log_group_arn}:log-stream:*"
-  ci_resource_arns     = concat(var.ci_managed_resource_arns, [var.storage_bucket_arn, local.storage_objects_arn, var.app_bucket_arn, local.app_objects_arn])
+  name_prefix         = "${var.project_name}-${var.environment}"
+  storage_objects_arn = "${var.storage_bucket_arn}/*"
+  app_objects_arn     = "${var.app_bucket_arn}/*"
+  github_main_subject = "repo:${var.github_repository}:ref:refs/heads/main"
+  backend_log_streams = "${var.backend_log_group_arn}:log-stream:*"
+  lambda_log_streams  = "${var.lambda_log_group_arn}:log-stream:*"
+  ci_resource_arns    = concat(var.ci_managed_resource_arns, [var.storage_bucket_arn, local.storage_objects_arn, var.app_bucket_arn, local.app_objects_arn])
 }
 
 resource "aws_iam_role" "compute" {

@@ -31,7 +31,7 @@ resource "aws_dynamodb_table" "tickets" {
   }
 
   server_side_encryption {
-    enabled = true
+    enabled     = true
     kms_key_arn = var.kms_key_arn
   }
 

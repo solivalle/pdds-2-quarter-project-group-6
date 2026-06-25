@@ -36,14 +36,14 @@ module "network" {
 module "ingress" {
   source = "./modules/ingress"
 
-  environment        = var.environment
-  name               = var.name
-  vpc_id             = module.network.vpc_id
-  public_subnet_ids  = module.network.public_subnet_ids
-  web_sg_id          = module.network.web_sg_id
-  default_port       = var.default_port
-  ingress_port       = var.ingress_port
-  private_port       = var.private_port
+  environment          = var.environment
+  name                 = var.name
+  vpc_id               = module.network.vpc_id
+  public_subnet_ids    = module.network.public_subnet_ids
+  web_sg_id            = module.network.web_sg_id
+  default_port         = var.default_port
+  ingress_port         = var.ingress_port
+  private_port         = var.private_port
   health_check_path    = var.health_check_path
   enable_tls           = var.enable_tls
   domain_name          = var.domain_name
@@ -57,19 +57,19 @@ module "ingress" {
 module "iam" {
   source = "./modules/iam"
 
-  environment              = var.environment
-  project_name             = var.project_name
-  github_repository        = var.github_repository
-  github_oidc_provider_url = var.github_oidc_provider_url
-  github_oidc_audience     = var.github_oidc_audience
-  database_table_arn       = local.database_table_arn
-  storage_bucket_arn       = local.storage_bucket_arn
-  app_bucket_arn           = local.app_bucket_arn
+  environment                 = var.environment
+  project_name                = var.project_name
+  github_repository           = var.github_repository
+  github_oidc_provider_url    = var.github_oidc_provider_url
+  github_oidc_audience        = var.github_oidc_audience
+  database_table_arn          = local.database_table_arn
+  storage_bucket_arn          = local.storage_bucket_arn
+  app_bucket_arn              = local.app_bucket_arn
   queue_arn                   = local.queue_arn
   backend_log_group_arn       = local.backend_log_group_arn
   lambda_log_group_arn        = local.lambda_log_group_arn
   scheduler_target_lambda_arn = local.lambda_function_arn
-  ci_managed_resource_arns    = [
+  ci_managed_resource_arns = [
     local.database_table_arn,
     local.queue_arn,
     module.ingress.alb_arn,
@@ -160,37 +160,37 @@ module "tickets_queue" {
 module "compute" {
   source = "./modules/compute"
 
-  subnet_id                  = module.network.private_subnet_ids[0]
-  environment                = var.environment
-  app_bucket_name            = var.app_bucket_name
-  app_bucket_id              = module.app_bucket.bucket_id
-  storage_bucket_name        = var.bucket_name
-  project_name               = var.project_name
-  ami_id                     = var.ami_id
-  instance_type              = var.instance_type
-  app_sg_id                  = module.network.app_sg_id
-  iam_instance_profile_name  = module.iam.compute_instance_profile_name
-  aws_region                 = var.region
-  aws_lb_target_group_arn    = module.ingress.aws_lb_target_group_arn
-  table_name                 = module.database.table_name
-  default_port               = var.default_port
-  queue_url                  = module.tickets_queue.queue_url
-  dlq_url                    = module.tickets_queue.dlq_url
-  polling_batch_size         = var.polling_batch_size
-  runtime_secret_arn         = module.security.runtime_secret_arn
-  backend_log_group_name     = module.observability.backend_log_group_name
+  subnet_id                 = module.network.private_subnet_ids[0]
+  environment               = var.environment
+  app_bucket_name           = var.app_bucket_name
+  app_bucket_id             = module.app_bucket.bucket_id
+  storage_bucket_name       = var.bucket_name
+  project_name              = var.project_name
+  ami_id                    = var.ami_id
+  instance_type             = var.instance_type
+  app_sg_id                 = module.network.app_sg_id
+  iam_instance_profile_name = module.iam.compute_instance_profile_name
+  aws_region                = var.region
+  aws_lb_target_group_arn   = module.ingress.aws_lb_target_group_arn
+  table_name                = module.database.table_name
+  default_port              = var.default_port
+  queue_url                 = module.tickets_queue.queue_url
+  dlq_url                   = module.tickets_queue.dlq_url
+  polling_batch_size        = var.polling_batch_size
+  runtime_secret_arn        = module.security.runtime_secret_arn
+  backend_log_group_name    = module.observability.backend_log_group_name
 }
 
 // The compute_lambda module creates the Lambda function and outputs its ARN for use in the scheduler module
 module "compute_lambda" {
   source = "./modules/compute_lambda"
 
-  project_name      = var.project_name
-  environment       = var.environment
-  health_check_url  = var.enable_tls ? "${module.ingress.https_url}${var.health_check_path}" : "http://${module.ingress.alb_dns_name}${var.health_check_path}"
-  architecture      = var.architecture
-  memory_size       = var.memory_size
-  lambda_role_arn   = module.iam.lambda_role_arn
+  project_name     = var.project_name
+  environment      = var.environment
+  health_check_url = var.enable_tls ? "${module.ingress.https_url}${var.health_check_path}" : "http://${module.ingress.alb_dns_name}${var.health_check_path}"
+  architecture     = var.architecture
+  memory_size      = var.memory_size
+  lambda_role_arn  = module.iam.lambda_role_arn
 
   depends_on = [module.observability]
 }

@@ -1,11 +1,11 @@
 locals {
-  name_prefix             = "${var.project_name}-${var.environment}"
-  backend_log_group_name  = "/${var.project_name}/${var.environment}/backend"
-  lambda_log_group_name   = "/aws/lambda/lambda-${var.environment}"
-  dashboard_name          = "${local.name_prefix}-dashboard"
-  alb_namespace           = "AWS/ApplicationELB"
-  lambda_namespace        = "AWS/Lambda"
-  sqs_namespace           = "AWS/SQS"
+  name_prefix            = "${var.project_name}-${var.environment}"
+  backend_log_group_name = "/${var.project_name}/${var.environment}/backend"
+  lambda_log_group_name  = "/aws/lambda/lambda-${var.environment}"
+  dashboard_name         = "${local.name_prefix}-dashboard"
+  alb_namespace          = "AWS/ApplicationELB"
+  lambda_namespace       = "AWS/Lambda"
+  sqs_namespace          = "AWS/SQS"
 }
 
 resource "aws_cloudwatch_log_group" "backend" {
@@ -165,11 +165,11 @@ resource "aws_budgets_budget" "monthly" {
   time_unit    = "MONTHLY"
 
   notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = 80
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "ACTUAL"
-    subscriber_sns_topic_arns  = [aws_sns_topic.alerts.arn]
+    comparison_operator       = "GREATER_THAN"
+    threshold                 = 80
+    threshold_type            = "PERCENTAGE"
+    notification_type         = "ACTUAL"
+    subscriber_sns_topic_arns = [aws_sns_topic.alerts.arn]
   }
 
   depends_on = [aws_sns_topic_policy.budgets]
