@@ -13,3 +13,8 @@ variable "billing_mode" {
   default     = "PAY_PER_REQUEST"
   description = "DynamoDB billing mode (PROVISIONED or PAY_PER_REQUEST)"
 }
+
+variable "kms_key_arn" {
+  type        = string
+  description = "KMS CMK ARN used for DynamoDB server-side encryption"
+}

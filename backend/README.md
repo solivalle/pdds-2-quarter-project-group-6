@@ -10,7 +10,7 @@ Backend Node.js/Express para TicketFlow, alineado con las historias en `docs/ent
 - Zod para validación de requests
 - DynamoDB o memoria local para tickets
 - S3 o filesystem local para adjuntos
-- Worker cron para evaluación de SLA cada 5 minutos
+- Worker cron para evaluación de SLA cada minuto
 - Reportes operativos y exportación CSV
 
 ## Funcionalidad incluida
@@ -25,6 +25,22 @@ Backend Node.js/Express para TicketFlow, alineado con las historias en `docs/ent
 - Worker de escalamiento automático por SLA vencido.
 - Reportes de desempeño y cumplimiento de SLA.
 - Historial de notificaciones simulado para desarrollo.
+
+## SLA para demo
+
+El proyecto está configurado por defecto para demo. El backend soporta dos presets:
+
+| Preset | Uso | Resolución por prioridad |
+| --- | --- | --- |
+| `standard` | Operación normal | P0: 4h, P1: 8h, P2: 24h, P3: 72h, P4: 120h laborales |
+| `demo` | Presentación corta y default del proyecto | P0: 2m, P1: 4m, P2: 6m, P3: 8m, P4: 10m laborales |
+
+Configura:
+
+```env
+SLA_POLICY_PRESET=demo
+SLA_JOB_CRON=* * * * *
+```
 
 ## Inicio rápido
 

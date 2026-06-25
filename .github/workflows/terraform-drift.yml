@@ -17,6 +17,7 @@ jobs:
 
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -30,13 +31,12 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
-      - name: Build backend artifact
-        working-directory: backend
-        run: |
-          npm ci
-          npm run build
+      - name: Build deployment artifacts
+        run: npm run deploy:prepare
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -46,8 +46,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform init
@@ -62,6 +61,8 @@ jobs:
         id: drift
         working-directory: ${{ env.TF_DIR }}
         shell: bash
+        env:
+          TF_VAR_runtime_secret_value: ${{ secrets.TICKETFLOW_RUNTIME_SECRET }}
         run: |
           set +e
           echo "## Drift check working dir: $(pwd)"

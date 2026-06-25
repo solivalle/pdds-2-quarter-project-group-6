@@ -45,6 +45,11 @@ variable "app_sg_id" {
   type        = string
 }
 
+variable "iam_instance_profile_name" {
+  description = "IAM instance profile name created by the IAM module"
+  type        = string
+}
+
 variable "aws_region" {
   description = "AWS region used by the backend SDK clients"
   type        = string
@@ -52,11 +57,6 @@ variable "aws_region" {
 
 variable "aws_lb_target_group_arn" {
   description = "ARN of the ALB target group — passed to the compute module for ECS service registration"
-  type        = string
-}
-
-variable "table_arn" {
-  description = "ARN of the DynamoDB table — passed to the compute module for IAM policy"
   type        = string
 }
 
@@ -76,11 +76,6 @@ variable "queue_url" {
   type        = string
 }
 
-variable "queue_arn" {
-  description = "SQS main queue ARN — used to scope least-privilege IAM permissions"
-  type        = string
-}
-
 variable "dlq_url" {
   description = "Dead letter queue URL"
   type        = string
@@ -89,4 +84,14 @@ variable "dlq_url" {
 variable "polling_batch_size" {
   description = "Maximum number of SQS messages the EC2 worker reads per poll"
   type        = number
+}
+
+variable "runtime_secret_arn" {
+  description = "Secrets Manager ARN containing the backend runtime secret"
+  type        = string
+}
+
+variable "backend_log_group_name" {
+  description = "CloudWatch log group name used by the backend service"
+  type        = string
 }

@@ -1,0 +1,7 @@
+Placeholder for Delivery 5 IAM evidence.
+
+Run after Terraform is initialized and the Delivery 5 modules are wired:
+
+terraform plan -var-file=envs/dev/dev.tfvars -no-color | rg "aws_iam_|aws_iam_openid_connect_provider" -C 3 > infra/evidence/iam-plan.txt
+
+This file must be replaced with the real plan excerpt before submission.

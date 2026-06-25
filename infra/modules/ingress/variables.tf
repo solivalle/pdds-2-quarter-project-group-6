@@ -46,3 +46,28 @@ variable "health_check_path" {
   type        = string
   default     = "/health"
 }
+
+variable "enable_tls" {
+  description = "Whether to provision ACM TLS and redirect HTTP to HTTPS"
+  type        = bool
+}
+
+variable "domain_name" {
+  description = "Public domain name for the ALB HTTPS endpoint"
+  type        = string
+}
+
+variable "hosted_zone_id" {
+  description = "Route53 hosted zone ID that contains domain_name"
+  type        = string
+}
+
+variable "ssl_policy_name" {
+  description = "ALB SSL policy name for the HTTPS listener"
+  type        = string
+}
+
+variable "redirect_status_code" {
+  description = "HTTP redirect status code used by the HTTP listener"
+  type        = string
+}

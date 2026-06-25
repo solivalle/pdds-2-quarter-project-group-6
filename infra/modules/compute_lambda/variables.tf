@@ -8,15 +8,15 @@ variable "project_name" {
   type        = string
 }
 
-variable "alb_dns_name" {
-  description = "DNS name of the Application Load Balancer — the public endpoint for the service"
-  type        = string
-}
-
 variable "memory_size" {
   description = "Memory allocated to the Lambda function in MB (min 128)"
   type        = number
   default     = 128
+}
+
+variable "lambda_role_arn" {
+  description = "IAM role ARN used by the Lambda function"
+  type        = string
 }
 
 variable "architecture" {
@@ -25,8 +25,7 @@ variable "architecture" {
   default     = "arm64"
 }
 
-variable "health_check_path" {
-  description = "HTTP path for ALB health checks"
+variable "health_check_url" {
+  description = "Full URL used by the Lambda health check."
   type        = string
-  default     = "/health"
 }
