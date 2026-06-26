@@ -1,0 +1,8 @@
+Placeholder for Delivery 5 TLS evidence.
+
+After a real domain is configured and enable_tls=true:
+
+curl -v https://<your-ingress-url>
+curl -v http://<your-ingress-url>
+
+Replace this placeholder with the combined output showing TLS handshake and HTTP 301 redirect.

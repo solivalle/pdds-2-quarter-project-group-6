@@ -26,3 +26,8 @@ variable "lifecycle_expire_days" {
   default     = 365
   description = "Days for expiring objects in the bucket"
 }
+
+variable "kms_key_arn" {
+  type        = string
+  description = "KMS CMK ARN used for S3 server-side encryption"
+}

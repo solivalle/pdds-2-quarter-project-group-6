@@ -4,14 +4,17 @@ import {
   Bell,
   CheckCircle2,
   ClipboardList,
+  Download,
   Filter,
   LogOut,
   MessageSquare,
+  Paperclip,
   Plus,
   RefreshCw,
   Send,
   ShieldCheck,
   Ticket as TicketIcon,
+  Upload,
   UserRound
 } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
@@ -182,7 +185,7 @@ function Workspace({ session, onLogout }: { session: Session; onLogout: () => vo
     void loadData();
   }, [filters.status, filters.priority, filters.slaAtRisk, filters.includeClosed]);
 
-  async function createTicket(input: { title: string; category: string; description: string; priority?: string }) {
+  async function createTicket(input: { title: string; category: string; description: string; priority?: string; attachments?: File[] }) {
     try {
       const ticket = await api.createTicket(session.token, input);
       setToast({ type: 'success', message: `Ticket creado: ${ticket.id}` });
@@ -359,7 +362,7 @@ function TicketTable({ tickets, selectedId, onSelect }: { tickets: Ticket[]; sel
               </td>
               <td><PriorityBadge priority={ticket.priority} /></td>
               <td><StatusBadge status={ticket.status} /></td>
-              <td>{slaLabel(ticket)}</td>
+              <td><SlaBadge ticket={ticket} /></td>
               <td>{formatDate(ticket.updatedAt)}</td>
             </tr>
           ))}
@@ -369,21 +372,25 @@ function TicketTable({ tickets, selectedId, onSelect }: { tickets: Ticket[]; sel
   );
 }
 
-function CreateTicketPanel({ onCreate }: { onCreate: (input: { title: string; category: string; description: string; priority?: string }) => Promise<void> }) {
+function CreateTicketPanel({ onCreate }: { onCreate: (input: { title: string; category: string; description: string; priority?: string; attachments?: File[] }) => Promise<void> }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('plataforma');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [saving, setSaving] = useState(false);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
-    await onCreate({ title, category, description, priority: priority || undefined });
+    await onCreate({ title, category, description, priority: priority || undefined, attachments });
     setSaving(false);
     setTitle('');
     setDescription('');
     setPriority('');
+    setAttachments([]);
+    setFileInputKey((value) => value + 1);
   }
 
   return (
@@ -415,12 +422,38 @@ function CreateTicketPanel({ onCreate }: { onCreate: (input: { title: string; ca
           Descripcion
           <textarea required minLength={10} maxLength={5000} value={description} onChange={(event) => setDescription(event.target.value)} />
         </label>
+        <label>
+          Adjuntos
+          <input
+            key={fileInputKey}
+            type="file"
+            multiple
+            onChange={(event) => setAttachments(Array.from(event.currentTarget.files ?? []).slice(0, 5))}
+          />
+        </label>
+        <SelectedFiles files={attachments} />
         <button className="primary-button" type="submit" disabled={saving}>
           <Send size={18} />
           {saving ? 'Creando...' : 'Crear ticket'}
         </button>
       </form>
     </section>
+  );
+}
+
+function SelectedFiles({ files }: { files: File[] }) {
+  if (!files.length) return <p className="file-hint">Puedes cargar hasta 5 archivos, maximo 10 MB por archivo.</p>;
+
+  return (
+    <ul className="selected-files" aria-label="Archivos seleccionados">
+      {files.map((file) => (
+        <li key={`${file.name}-${file.size}-${file.lastModified}`}>
+          <Paperclip size={15} />
+          <span>{file.name}</span>
+          <small>{formatFileSize(file.size)}</small>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -442,6 +475,10 @@ function TicketDetail({
   const [agentId, setAgentId] = useState('');
   const [comment, setComment] = useState('');
   const [visibility, setVisibility] = useState<'PUBLIC' | 'INTERNAL'>('PUBLIC');
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [attachmentInputKey, setAttachmentInputKey] = useState(0);
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState('');
 
   useEffect(() => {
     if (ticket) {
@@ -449,6 +486,9 @@ function TicketDetail({
       setAgentId(ticket.assignedAgentId ?? 'AGE-2001');
       setReason('');
       setComment('');
+      setAttachmentFiles([]);
+      setAttachmentError('');
+      setAttachmentInputKey((value) => value + 1);
     }
   }, [ticket?.id]);
 
@@ -477,6 +517,66 @@ function TicketDetail({
         <div><dt>Vence respuesta</dt><dd>{formatDate(ticket.sla.responseDueAt)}</dd></div>
         <div><dt>Vence resolucion</dt><dd>{formatDate(ticket.sla.resolutionDueAt)}</dd></div>
       </dl>
+      <SlaSummary ticket={ticket} />
+
+      <div className="attachments">
+        <h3><Paperclip size={18} /> Adjuntos</h3>
+        <div className="attachment-list">
+          {ticket.attachments.length ? ticket.attachments.map((attachment) => (
+            <article key={attachment.id}>
+              <div>
+                <strong>{attachment.fileName}</strong>
+                <small>{formatFileSize(attachment.sizeBytes)} · {formatDate(attachment.uploadedAt)}</small>
+              </div>
+              <button
+                className="icon-button"
+                type="button"
+                title="Descargar adjunto"
+                aria-label={`Descargar ${attachment.fileName}`}
+                disabled={downloadingAttachmentId === attachment.id}
+                onClick={async () => {
+                  setDownloadingAttachmentId(attachment.id);
+                  setAttachmentError('');
+                  try {
+                    const blob = await api.downloadAttachment(token, ticket.id, attachment.id);
+                    downloadBlob(blob, attachment.fileName);
+                  } catch (err) {
+                    setAttachmentError(messageFromError(err));
+                  } finally {
+                    setDownloadingAttachmentId(null);
+                  }
+                }}
+              >
+                <Download size={18} />
+              </button>
+            </article>
+          )) : <p className="empty-state">Sin adjuntos todavia.</p>}
+        </div>
+        {attachmentError && <p className="form-error">{attachmentError}</p>}
+
+        <form className="attachment-upload" onSubmit={async (event) => {
+          event.preventDefault();
+          if (!attachmentFiles.length) return;
+          await onUpdate(() => api.addAttachments(token, ticket.id, attachmentFiles), 'Adjuntos cargados');
+          setAttachmentFiles([]);
+          setAttachmentInputKey((value) => value + 1);
+        }}>
+          <label>
+            Agregar archivos
+            <input
+              key={attachmentInputKey}
+              type="file"
+              multiple
+              onChange={(event) => setAttachmentFiles(Array.from(event.currentTarget.files ?? []).slice(0, 5))}
+            />
+          </label>
+          <SelectedFiles files={attachmentFiles} />
+          <button className="secondary-button" type="submit" disabled={!attachmentFiles.length}>
+            <Upload size={18} />
+            Subir adjuntos
+          </button>
+        </form>
+      </div>
 
       {canManage && (
         <div className="management-tools">
@@ -665,8 +765,43 @@ function StatusBadge({ status }: { status: TicketStatus }) {
   return <span className={`badge status ${status.toLowerCase()}`}>{status.replace('_', ' ')}</span>;
 }
 
+function SlaBadge({ ticket }: { ticket: Ticket }) {
+  return <span className={`badge sla ${slaState(ticket)}`}>{slaLabel(ticket)}</span>;
+}
+
+function SlaSummary({ ticket }: { ticket: Ticket }) {
+  const progress = slaProgress(ticket);
+
+  return (
+    <div className={`sla-summary ${slaState(ticket)}`}>
+      <div className="sla-summary-header">
+        <div>
+          <span className="eyebrow">SLA</span>
+          <strong>{slaLabel(ticket)}</strong>
+        </div>
+        <span>{formatSlaTiming(ticket)}</span>
+      </div>
+      <div className="progress-track" aria-label="Avance del SLA">
+        <span style={{ width: `${progress}%` }} />
+      </div>
+      <dl>
+        <div><dt>Respuesta</dt><dd>{ticket.sla.firstResponseAt ? formatDate(ticket.sla.firstResponseAt) : 'Pendiente'}</dd></div>
+        <div><dt>Cierre</dt><dd>{ticket.sla.resolvedAt ? formatDate(ticket.sla.resolvedAt) : 'Pendiente'}</dd></div>
+      </dl>
+    </div>
+  );
+}
+
+function slaState(ticket: Ticket): 'ok' | 'risk' | 'breached' | 'resolved' {
+  if (ticket.sla.isBreached) return 'breached';
+  if (ticket.sla.resolvedAt) return 'resolved';
+  if (ticket.sla.isAtRisk) return 'risk';
+  return 'ok';
+}
+
 function slaLabel(ticket: Ticket): string {
   if (ticket.sla.isBreached) return 'Vencido';
+  if (ticket.sla.resolvedAt) return 'Cumplido';
   if (ticket.sla.isAtRisk) return 'En riesgo';
   return 'En tiempo';
 }
@@ -676,6 +811,59 @@ function formatDate(value: string): string {
     dateStyle: 'medium',
     timeStyle: 'short'
   }).format(new Date(value));
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function slaProgress(ticket: Ticket): number {
+  const created = new Date(ticket.createdAt).getTime();
+  const due = new Date(ticket.sla.resolutionDueAt).getTime();
+  const effectiveNow = ticket.sla.resolvedAt ? new Date(ticket.sla.resolvedAt).getTime() : Date.now();
+  const total = Math.max(1, due - created);
+  const consumed = Math.max(0, effectiveNow - created);
+  return Math.min(100, Math.round((consumed / total) * 100));
+}
+
+function formatSlaTiming(ticket: Ticket): string {
+  const due = new Date(ticket.sla.resolutionDueAt).getTime();
+  const compare = ticket.sla.resolvedAt ? new Date(ticket.sla.resolvedAt).getTime() : Date.now();
+  const diff = due - compare;
+  const prefix = ticket.sla.resolvedAt
+    ? diff >= 0 ? 'Cerrado a tiempo' : 'Cerrado tarde'
+    : diff >= 0 ? 'Restan' : 'Vencido hace';
+  return `${prefix} ${formatDuration(Math.abs(diff))}`;
+}
+
+function formatDuration(milliseconds: number): string {
+  const minutes = Math.max(0, Math.round(milliseconds / 60000));
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours < 24) return remainingMinutes ? `${hours} h ${remainingMinutes} min` : `${hours} h`;
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return remainingHours ? `${days} d ${remainingHours} h` : `${days} d`;
+}
+
+function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function messageFromError(error: unknown): string {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ticketPriorities, ticketStatuses } from '../domain/enums';
+import { auditEventTypes, ticketPriorities, ticketStatuses } from '../domain/enums';
 
 const booleanQuery = z.preprocess((value) => {
   if (value === 'true') return true;
@@ -81,4 +81,16 @@ export const reportSchema = z.object({
 
 export const asyncEnqueueSchema = z.object({
   body: z.unknown().refine((value) => value !== undefined, 'JSON body is required')
+});
+
+export const ticketHistorySchema = z.object({
+  params: z.object({ ticketId: z.string().min(1) }),
+  query: z.object({
+    type: z.enum(auditEventTypes).optional(),
+    limit: z.preprocess(
+      (v) => (v !== undefined ? Number(v) : undefined),
+      z.number().int().min(1).max(100).default(50)
+    ).optional(),
+    cursor: z.string().optional()
+  })
 });

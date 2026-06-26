@@ -133,6 +133,40 @@ describe('TicketFlow services', () => {
     expect(archivedCount).toBe(1);
   });
 
+  it('keeps SLA breached when a ticket is resolved after the due date', async () => {
+    const users = new UserService();
+    const notifications = new NotificationService();
+    const repository = new MemoryTicketRepository();
+    const storage = new LocalAttachmentStorage('/private/tmp/ticketflow-test-attachments');
+    const tickets = new TicketService(repository, storage, users, notifications);
+    const { requester, agent } = buildActors();
+
+    const created = await tickets.createTicket({
+      title: 'Caida de plataforma critica',
+      description: 'El sistema principal no responde para ningun usuario.',
+      category: 'infraestructura',
+      priority: 'P0'
+    }, requester);
+
+    const stale = await repository.getById(created.id);
+    if (!stale) {
+      throw new Error('Ticket not found in memory repository');
+    }
+
+    stale.sla.responseDueAt = '2026-01-01T00:00:00.000Z';
+    stale.sla.resolutionDueAt = '2026-01-01T00:00:00.000Z';
+    await repository.update(stale);
+
+    const resolved = await tickets.updateStatus(created.id, {
+      status: 'RESOLVED',
+      reason: 'Resuelto despues del vencimiento'
+    }, agent);
+
+    expect(resolved.sla.resolvedAt).toBeDefined();
+    expect(resolved.sla.isBreached).toBe(true);
+    expect(resolved.sla.isAtRisk).toBe(false);
+  });
+
   it('enqueues async messages and processes them into object storage', async () => {
     const queue = new InMemoryAsyncQueue();
     const writer = new InMemoryAsyncResultWriter();

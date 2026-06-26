@@ -5,6 +5,7 @@ import { ticketPriorities, ticketStatuses, TicketPriority, TicketStatus } from '
 import { suggestPriority } from '../domain/priority';
 import { calculateSla, evaluateSla } from '../domain/sla';
 import { Attachment, AuthUser, AuditEvent, Comment, Ticket, TicketFilters } from '../domain/types';
+import { AuditEventType } from '../domain/enums';
 import { assertFound, HttpError } from '../utils/http-error';
 import { NotificationService } from './notification-service';
 import { AsyncMessageService, systemAsyncActor } from './async-message-service';
@@ -95,6 +96,39 @@ export class TicketService {
     return this.present(refreshed, actor);
   }
 
+  async getTicketHistory(
+    id: string,
+    actor: AuthUser,
+    options: { type?: AuditEventType; limit?: number; cursor?: string }
+  ): Promise<{ data: AuditEvent[]; nextCursor: string | null; total: number }> {
+    const ticket = await this.loadAuthorized(id, actor);
+    const presented = this.present(ticket, actor);
+
+    let events = presented.auditLog;
+
+    // Optional filter by event type
+    if (options.type) {
+      events = events.filter((e) => e.type === options.type);
+    }
+
+    const total = events.length;
+    const limit = options.limit ?? 50;
+
+    // Cursor-based pagination: cursor is the id of the last seen event
+    let startIndex = 0;
+    if (options.cursor) {
+      const idx = events.findIndex((e) => e.id === options.cursor);
+      if (idx !== -1) {
+        startIndex = idx + 1;
+      }
+    }
+
+    const page = events.slice(startIndex, startIndex + limit);
+    const nextCursor = startIndex + limit < total ? page[page.length - 1]?.id ?? null : null;
+
+    return { data: page, nextCursor, total };
+  }
+
   async updateStatus(id: string, input: UpdateTicketStatusInput, actor: AuthUser): Promise<Ticket> {
     if (!ticketStatuses.includes(input.status)) {
       throw new HttpError(400, 'Invalid ticket status');
@@ -117,6 +151,7 @@ export class TicketService {
       ticket.closedAt = now;
       ticket.sla.resolvedAt = now;
     }
+    ticket.sla = evaluateSla(ticket.sla, ticket.createdAt);
     ticket.auditLog.push(this.audit('STATUS_CHANGED', actor.id, input.reason, previous, input.status));
 
     const saved = await this.repository.update(ticket);
@@ -125,7 +160,7 @@ export class TicketService {
     if (requester) {
       await this.notifications.statusChanged(saved, requester.email);
     }
-    return this.present(saved, actor);
+    return this.present(await this.refreshSlaState(saved), actor);
   }
 
   async assignTicket(id: string, assignedAgentId: string, actor: AuthUser, reason?: string): Promise<Ticket> {
@@ -142,7 +177,7 @@ export class TicketService {
     ticket.status = ticket.status === 'OPEN' ? 'ASSIGNED' : ticket.status;
     ticket.updatedAt = new Date().toISOString();
     ticket.auditLog.push(this.audit(previous ? 'REASSIGNED' : 'ASSIGNED', actor.id, reason, previous, assignedAgentId));
-    return this.present(await this.repository.update(ticket), actor);
+    return this.present(await this.refreshSlaState(await this.repository.update(ticket)), actor);
   }
 
   async addComment(id: string, input: AddCommentInput, actor: AuthUser): Promise<Ticket> {
@@ -167,7 +202,7 @@ export class TicketService {
       ticket.sla.firstResponseAt = now;
     }
     ticket.auditLog.push(this.audit('COMMENT_ADDED', actor.id, input.visibility, undefined, { commentId: comment.id }));
-    return this.present(await this.repository.update(ticket), actor);
+    return this.present(await this.refreshSlaState(await this.repository.update(ticket)), actor);
   }
 
   async addAttachments(id: string, files: UploadedFileInput[], actor: AuthUser): Promise<Ticket> {
@@ -178,7 +213,7 @@ export class TicketService {
       ticket.auditLog.push(this.audit('ATTACHMENT_ADDED', actor.id, undefined, undefined, { attachmentId: attachment.id }));
     }
     ticket.updatedAt = new Date().toISOString();
-    return this.present(await this.repository.update(ticket), actor);
+    return this.present(await this.refreshSlaState(await this.repository.update(ticket)), actor);
   }
 
   async getAttachmentUrl(ticketId: string, attachmentId: string, actor: AuthUser): Promise<{ url: string }> {
