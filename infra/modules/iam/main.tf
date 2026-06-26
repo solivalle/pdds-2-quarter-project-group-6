@@ -169,16 +169,28 @@ resource "aws_iam_policy" "lambda" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid    = "WriteLambdaLogs"
-      Effect = "Allow"
-      Action = [
-        "logs:CreateLogStream",
-        "logs:PutLogEvents",
-        "logs:DescribeLogStreams"
-      ]
-      Resource = local.lambda_log_streams
-    }]
+    Statement = [
+      {
+        Sid    = "WriteLambdaLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = local.lambda_log_streams
+      },
+      {
+        Sid    = "ConsumeFromSQS"
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = var.queue_arn
+      }
+    ]
   })
 }
 
@@ -352,10 +364,18 @@ resource "aws_iam_policy" "ci_runner" {
           "kms:PutKeyPolicy",
           "kms:ScheduleKeyDeletion",
           "lambda:AddPermission",
+          "lambda:CreateEventSourceMapping",
           "lambda:CreateFunction",
+          "lambda:DeleteEventSourceMapping",
           "lambda:DeleteFunction",
+          "lambda:GetEventSourceMapping",
           "lambda:GetFunction",
+          "lambda:ListEventSourceMappings",
+          "lambda:ListTags",
           "lambda:RemovePermission",
+          "lambda:TagResource",
+          "lambda:UntagResource",
+          "lambda:UpdateEventSourceMapping",
           "lambda:UpdateFunctionCode",
           "lambda:UpdateFunctionConfiguration",
           "logs:CreateLogGroup",

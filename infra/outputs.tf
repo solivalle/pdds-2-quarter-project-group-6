@@ -38,6 +38,11 @@ output "nat_gateway_id" {
   value       = module.network.nat_gateway_id
 }
 
+output "nat_gateway_ids" {
+  description = "List of NAT Gateway IDs provisioned for private subnet internet access"
+  value       = module.network.nat_gateway_ids
+}
+
 output "queue_url" {
   description = "SQS main queue URL — used by the application to enqueue messages"
   value       = module.tickets_queue.queue_url

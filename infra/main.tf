@@ -242,3 +242,15 @@ module "observability" {
 resource "time_sleep" "lock_demo" {
   create_duration = "20s"
 }
+
+# ── SQS → Lambda event source mapping ─────────────────────────────────────────
+# Connects the SQS queue to the Lambda function so that Lambda is invoked
+# automatically when messages arrive in the queue.
+resource "aws_lambda_event_source_mapping" "sqs_to_lambda" {
+  event_source_arn = module.tickets_queue.queue_arn
+  function_name    = module.compute_lambda.lambda_arn
+  batch_size       = var.polling_batch_size
+  enabled          = true
+
+  depends_on = [module.compute_lambda, module.tickets_queue]
+}
