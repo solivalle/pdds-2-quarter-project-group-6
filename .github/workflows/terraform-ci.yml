@@ -252,9 +252,9 @@ jobs:
         run: terraform workspace select dev || terraform workspace new dev
         working-directory: infra
 
-      # - name: Terraform apply
-      #   run: terraform apply -auto-approve tfplan-dev
-      #   working-directory: infra
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan-dev
+        working-directory: infra
 
       # - name: Terraform destroy
       #   run: terraform destroy -var-file=envs/dev/dev.tfvars -auto-approve
@@ -383,9 +383,9 @@ jobs:
         run: terraform workspace select prod || terraform workspace new prod
         working-directory: infra
 
-      # - name: Terraform apply
-      #   run: terraform apply tfplan-prod
-      #   working-directory: infra
+      - name: Terraform apply
+        run: terraform apply tfplan-prod
+        working-directory: infra
 
       # - name: Terraform destroy
       #   run: terraform destroy -var-file=envs/prod/prod.tfvars -auto-approve
