@@ -1098,16 +1098,10 @@ Private B: <span class="val">10.0.12.0/24</span> us-west-2b  (crecimiento)
         <div class="card card-accent">
           <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem;">
             <span class="tag tag-blue">Candidato #1</span>
-            <h3 class="section-title" style="margin-bottom:0;">Campo calculado en GET /tickets</h3>
+            <h3 class="section-title" style="margin-bottom:0;">Acción rápida “Crear incidente crítico”</h3>
           </div>
           <div class="grid-2" style="gap:.6rem;">
             <div class="check-list">
-              <div class="check-item"><span class="ci">📍</span><span><strong>Endpoint:</strong> <code>GET /api/tickets</code> — handler: <code>ticket-routes.ts</code> → <code>TicketService.listTickets()</code></span></div>
-              <div class="check-item"><span class="ci">👁️</span><span><strong>Comportamiento observable:</strong> añadir campo <code>ticket_age_days</code> derivado de <code>createdAt</code></span></div>
-            </div>
-            <div class="check-list">
-              <div class="check-item"><span class="ci">🔍</span><span><strong>Verificación:</strong> <code>curl GET /api/tickets</code> — campo nuevo en cada objeto del array</span></div>
-              <div class="check-item"><span class="ci">📐</span><span><strong>Alcance:</strong> ~3 líneas en el mapper de la respuesta</span></div>
             </div>
           </div>
         </div>
@@ -1115,34 +1109,14 @@ Private B: <span class="val">10.0.12.0/24</span> us-west-2b  (crecimiento)
         <div class="card card-accent">
           <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem;">
             <span class="tag tag-violet">Candidato #2</span>
-            <h3 class="section-title" style="margin-bottom:0;">Validación de entrada en POST /tickets</h3>
-          </div>
-          <div class="grid-2" style="gap:.6rem;">
-            <div class="check-list">
-              <div class="check-item"><span class="ci">📍</span><span><strong>Endpoint:</strong> <code>POST /api/tickets</code> — handler: <code>ticket-routes.ts</code> + <code>schemas.ts</code></span></div>
-              <div class="check-item"><span class="ci">👁️</span><span><strong>Observable:</strong> campo requerido ausente → HTTP 400 con body descriptivo</span></div>
-            </div>
-            <div class="check-list">
-              <div class="check-item"><span class="ci">🔍</span><span><strong>Verificación:</strong> <code>curl -d '{}' POST /api/tickets</code> → responde <code>400</code> con mensaje de campo faltante</span></div>
-              <div class="check-item"><span class="ci">📐</span><span><strong>Alcance:</strong> 1 campo adicional en el schema Zod existente</span></div>
-            </div>
+            <h3 class="section-title" style="margin-bottom:0;">Historial visible de actividad del ticket</h3>
           </div>
         </div>
 
         <div class="card card-accent">
           <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem;">
             <span class="tag tag-cyan">Candidato #3</span>
-            <h3 class="section-title" style="margin-bottom:0;">Parámetro de filtro en GET /tickets</h3>
-          </div>
-          <div class="grid-2" style="gap:.6rem;">
-            <div class="check-list">
-              <div class="check-item"><span class="ci">📍</span><span><strong>Endpoint:</strong> <code>GET /api/tickets?status=open</code> — handler: <code>listTicketsSchema</code> + <code>TicketService</code></span></div>
-              <div class="check-item"><span class="ci">👁️</span><span><strong>Observable:</strong> filtrar tickets por estado (open/closed/pending) — lista reducida según parámetro</span></div>
-            </div>
-            <div class="check-list">
-              <div class="check-item"><span class="ci">🔍</span><span><strong>Verificación:</strong> <code>curl GET /api/tickets?status=open</code> vs sin parámetro — diferencia en conteo</span></div>
-              <div class="check-item"><span class="ci">📐</span><span><strong>Alcance:</strong> campo en schema + condición en query DynamoDB</span></div>
-            </div>
+            <h3 class="section-title" style="margin-bottom:0;">Vista previa de imágenes adjuntas</h3>
           </div>
         </div>
       </div>
