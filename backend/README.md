@@ -127,7 +127,7 @@ La coleccion y environments estan en `postman/`:
 - `postman/ticketflow.postman_collection.json`
 - `postman/environments/ticketflow-local.postman_environment.json`
 - `postman/environments/ticketflow-dev.postman_environment.json`
-- `postman/environments/ticketflow-prod.postman_environment.json`
+- `postman/environments/ticketflow-staging.postman_environment.json`
 
 El login guarda automaticamente `authToken` en el environment activo para reutilizarlo en los demas endpoints.
 

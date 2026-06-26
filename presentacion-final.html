@@ -897,7 +897,7 @@ Private B: <span class="val">10.0.12.0/24</span> us-west-2b  (crecimiento)
           <div class="check-list" style="margin-top:.6rem;">
             <div class="check-item"><span class="ci">✅</span><span><strong>NAT Gateway:</strong> elegido por simplicidad y flexibilidad — permite instalar dependencias, acceder APIs externas y hacer bootstrap</span></div>
             <div class="check-item"><span class="ci">⚠️</span><span><strong>VPC Endpoints</strong> descartados: no permiten salida a Internet para bootstrap de EC2 ni consumo de APIs externas</span></div>
-            <div class="check-item"><span class="ci">📝</span><span>Para producción real: complementar con Gateway Endpoints para S3 y DynamoDB reduciendo tráfico y costo</span></div>
+            <div class="check-item"><span class="ci">📝</span><span>Para stageucción real: complementar con Gateway Endpoints para S3 y DynamoDB reduciendo tráfico y costo</span></div>
           </div>
         </div>
       </div>
@@ -922,7 +922,7 @@ Private B: <span class="val">10.0.12.0/24</span> us-west-2b  (crecimiento)
 
       <p class="lead" style="margin-bottom:1rem;">
         El workflow <code>terraform-ci.yml</code> orquesta 6 jobs encadenados. La decisión clave:
-        <strong>separar el plan del apply</strong> y exigir aprobación explícita antes del deploy a producción.
+        <strong>separar el plan del apply</strong> y exigir aprobación explícita antes del deploy a stagingucción.
       </p>
 
       <!-- Pipeline flow -->
@@ -935,9 +935,9 @@ Private B: <span class="val">10.0.12.0/24</span> us-west-2b  (crecimiento)
         <span class="pipe-arrow">→</span>
         <div class="pipe-step gated"><span class="dot"></span>dev apply <span class="tag tag-blue" style="font-size:.65rem;padding:.15rem .5rem;margin-left:.3rem;">env: dev</span></div>
         <span class="pipe-arrow">→</span>
-        <div class="pipe-step"><span class="dot"></span>validate prod plan</div>
+        <div class="pipe-step"><span class="dot"></span>validate stage plan</div>
         <span class="pipe-arrow">→</span>
-        <div class="pipe-step gated"><span class="dot"></span>prod apply <span class="tag tag-amber" style="font-size:.65rem;padding:.15rem .5rem;margin-left:.3rem;">🔐 gate</span></div>
+        <div class="pipe-step gated"><span class="dot"></span>stage apply <span class="tag tag-amber" style="font-size:.65rem;padding:.15rem .5rem;margin-left:.3rem;">🔐 gate</span></div>
       </div>
 
       <div class="grid-2" style="margin-top:.8rem;">
@@ -967,7 +967,7 @@ Private B: <span class="val">10.0.12.0/24</span> us-west-2b  (crecimiento)
       <div class="card" style="margin-top:.8rem;padding:1rem 1.3rem;">
         <div style="display:flex;gap:1.5rem;align-items:center;">
           <span class="tag tag-amber">🔐 Environment Gate</span>
-          <span style="color:var(--text-2);font-size:.85rem;">El job <code>prod_apply</code> usa <code>environment: prod</code> — GitHub pausa la ejecución y requiere aprobación manual de un revisor autorizado antes de desplegar.</span>
+          <span style="color:var(--text-2);font-size:.85rem;">El job <code>staging_apply</code> usa <code>environment: staging</code> — GitHub pausa la ejecución y requiere aprobación manual de un revisor autorizado antes de desplegar.</span>
         </div>
       </div>
     </div>
@@ -1056,8 +1056,8 @@ Private B: <span class="val">10.0.12.0/24</span> us-west-2b  (crecimiento)
           <div class="card card-accent">
             <div class="tag tag-amber" style="margin-bottom:.7rem;">🔐 Guardrail: Environment Approval Gate</div>
             <div class="check-list">
-              <div class="check-item"><span class="ci">⚙️</span><span><strong>Mecanismo:</strong> Job <code>prod_apply</code> con <code>environment: prod</code> — GitHub pausa el workflow y espera aprobación explícita del revisor requerido</span></div>
-              <div class="check-item"><span class="ci">🎯</span><span><strong>Sin gate:</strong> cualquier push a <code>main</code> desplegaría automáticamente a producción sin revisión humana</span></div>
+              <div class="check-item"><span class="ci">⚙️</span><span><strong>Mecanismo:</strong> Job <code>staging_apply</code> con <code>environment: staging</code> — GitHub pausa el workflow y espera aprobación explícita del revisor requerido</span></div>
+              <div class="check-item"><span class="ci">🎯</span><span><strong>Sin gate:</strong> cualquier push a <code>main</code> desplegaría automáticamente a stageucción sin revisión humana</span></div>
             </div>
           </div>
         </div>
@@ -1263,7 +1263,7 @@ curl -H <span class="str">"Authorization: Bearer $TOKEN"</span> \
             <div class="tag tag-violet" style="margin-bottom:.5rem;">Terraform Plan</div>
             <div class="check-list">
               <div class="check-item"><span class="ci">❓</span><span>¿Por qué el plan se ejecuta contra el estado de staging y no dev?</span></div>
-              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> El workspace <code>prod</code> tiene su propio estado remoto en S3 — planear contra dev sería planear contra infraestructura diferente</span></div>
+              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> El workspace <code>stage</code> tiene su propio estado remoto en S3 — planear contra dev sería planear contra infraestructura diferente</span></div>
             </div>
           </div>
         </div>
@@ -1272,7 +1272,7 @@ curl -H <span class="str">"Authorization: Bearer $TOKEN"</span> \
             <div class="tag tag-amber" style="margin-bottom:.5rem;">Environment Gate</div>
             <div class="check-list">
               <div class="check-item"><span class="ci">❓</span><span>¿Qué pasaría si removemos el gate de aprobación de staging?</span></div>
-              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> Todo merge a main desplegaría automáticamente a producción sin revisión humana — el gate es la barrera de control manual</span></div>
+              <div class="check-item"><span class="ci">💡</span><span><strong>R:</strong> Todo merge a main desplegaría automáticamente a stageucción sin revisión humana — el gate es la barrera de control manual</span></div>
             </div>
           </div>
           <div class="card card-accent">
@@ -1305,7 +1305,7 @@ curl -H <span class="str">"Authorization: Bearer $TOKEN"</span> \
       <div class="tag tag-emerald" style="margin-bottom:1.5rem;font-size:.8rem;">✅ Listo para presentar</div>
       <h1 class="hero-title" style="text-align:center;">¡A demostrar<br/>que funciona!</h1>
       <p style="color:var(--text-2);font-size:1.1rem;max-width:600px;line-height:1.7;margin-bottom:2rem;">
-        El pipeline es el producto. La presentación no es un slide show —
+        El pipeline es el stageucto. La presentación no es un slide show —
         es una demostración de que el sistema opera correctamente bajo condiciones reales.
       </p>
       <div class="stat-row" style="max-width:640px;width:100%;">

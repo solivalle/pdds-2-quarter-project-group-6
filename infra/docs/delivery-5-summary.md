@@ -32,7 +32,7 @@ The `infra/modules/security/` module creates one customer-managed KMS key per en
 |---|---|
 | Alias variable | `kms_alias_name` |
 | Dev alias | `alias/ticketflow-dev-cmk` |
-| Prod alias | `alias/ticketflow-prod-cmk` |
+| Staging alias | `alias/ticketflow-stage-cmk` |
 | Encrypted resources | S3 attachments bucket, S3 app artifact bucket, DynamoDB tickets table, Secrets Manager runtime secret |
 
 The key policy grants use to:
@@ -115,7 +115,7 @@ The CI role trust policy is scoped to `refs/heads/main`. This means pull request
 
 ## TLS domain configuration
 
-TLS is implemented in `infra/modules/ingress/` but currently disabled in `dev.tfvars` and `prod.tfvars` until the team has a controlled domain and Route53 hosted zone.
+TLS is implemented in `infra/modules/ingress/` but currently disabled in `dev.tfvars` and `staging.tfvars` until the team has a controlled domain and Route53 hosted zone.
 
 To enable TLS:
 

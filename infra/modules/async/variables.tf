@@ -24,6 +24,6 @@ variable "dlq_message_retention_seconds" {
 }
 
 variable "environment" {
-  description = "Deployment environment (dev, staging, prod)"
+  description = "Deployment environment (dev, staging)"
   type        = string
 }

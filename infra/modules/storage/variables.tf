@@ -6,7 +6,7 @@ variable "bucket_name" {
 variable "environment" {
   type        = string
   default     = "dev"
-  description = "Environment (dev, staging, prod)"
+  description = "Environment (dev, staging)"
 }
 
 variable "lifecycle_ia_days" {
