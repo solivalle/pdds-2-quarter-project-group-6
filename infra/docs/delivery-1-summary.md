@@ -164,7 +164,7 @@ variable "environment" {
 }
 ```
 
-This variable defines the deployment environment, such as `dev` or `prod`. In the future, we expect production environments to use stricter security settings, naming conventions, and potentially different infrastructure configurations.
+This variable defines the deployment environment, such as `dev` or `staging`. In the future, we expect production environments to use stricter security settings, naming conventions, and potentially different infrastructure configurations.
 
 ## project_name
 
@@ -202,7 +202,7 @@ This variable defines the S3 bucket name. We expect the naming convention to dif
 For example:
 
 - Development: `project-dev-bucket`
-- Production: `project-prod-bucket`
+- Production: `project-staging-bucket`
 
 Using variables improves maintainability, scalability, and environment isolation while reducing duplicated configuration code.
 

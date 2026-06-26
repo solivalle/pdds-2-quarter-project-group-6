@@ -27,3 +27,8 @@ output "nat_gateway_id" {
   description = "ID of the NAT Gateway for private subnet internet access"
   value       = aws_nat_gateway.this.id
 }
+
+output "nat_gateway_ids" {
+  description = "List of NAT Gateway IDs provisioned for private subnet internet access"
+  value       = [aws_nat_gateway.this.id]
+}

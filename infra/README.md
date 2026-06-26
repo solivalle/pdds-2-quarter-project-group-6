@@ -9,7 +9,7 @@ This directory contains the Terraform configuration for the **TicketFlow** suppo
   - **`compute/`**: Provisions the Amazon EC2 instance, security groups, and IAM instance profiles.
   - **`storage/`**: Provisions the Amazon S3 bucket for ticket attachments with lifecycle rules and encryption.
   - **`database/`**: Provisions the DynamoDB table for tickets metadata with global secondary indexes.
-- **`envs/`**: Environment-specific variable files (`dev/dev.tfvars`, `prod/prod.tfvars`).
+- **`envs/`**: Environment-specific variable files (`dev/dev.tfvars`, `stage/staging.tfvars`).
 - **`docs/`**: Delivery summaries and documentation.
 
 ## How to Deploy
@@ -42,11 +42,11 @@ This directory contains the Terraform configuration for the **TicketFlow** suppo
    terraform apply -var-file=envs/dev/dev.tfvars
    ```
 
-3. **Deploy prod:**
+3. **Deploy staging:**
    ```bash
    terraform init
-   terraform workspace select prod || terraform workspace new prod
-   terraform apply -var-file=envs/prod/prod.tfvars
+   terraform workspace select staging || terraform workspace new staging
+   terraform apply -var-file=envs/staging/staging.tfvars
    ```
 
 ---
@@ -172,7 +172,7 @@ AWS_SECRET_ACCESS_KEY
 
 TLS cannot be issued for AWS-owned names such as `*.elb.amazonaws.com`. Configure a domain controlled by the team or request a delegated subdomain from the instructors.
 
-In `envs/dev/dev.tfvars` or `envs/prod/prod.tfvars`:
+In `envs/dev/dev.tfvars` or `envs/staging/staging.tfvars`:
 
 ```hcl
 enable_tls     = true

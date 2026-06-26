@@ -5,7 +5,7 @@
 - `ticketflow.postman_collection.json`: coleccion principal de endpoints.
 - `environments/ticketflow-local.postman_environment.json`: environment local listo para `http://localhost:8080`.
 - `environments/ticketflow-dev.postman_environment.json`: environment dev con placeholder de host.
-- `environments/ticketflow-prod.postman_environment.json`: environment prod con placeholder de dominio.
+- `environments/ticketflow-staging.postman_environment.json`: environment staging con placeholder de dominio.
 
 ## Como importar
 

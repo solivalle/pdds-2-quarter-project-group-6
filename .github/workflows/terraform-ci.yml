@@ -96,8 +96,9 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform init without backend
         if: github.event_name == 'pull_request'
@@ -155,8 +156,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform init
         run: terraform init
@@ -236,7 +238,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform init
@@ -257,8 +260,8 @@ jobs:
       #   run: terraform destroy -var-file=envs/dev/dev.tfvars -auto-approve
       #   working-directory: infra
 
-  validate_prod:
-    name: Validate prod plan
+  validate_staging:
+    name: Validate staging plan
     needs: dev_apply
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -291,30 +294,31 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform init
         run: terraform init
         working-directory: infra
 
-      - name: Select prod workspace
-        run: terraform workspace select prod || terraform workspace new prod
+      - name: Select staging workspace
+        run: terraform workspace select staging || terraform workspace new staging
         working-directory: infra
 
       - name: Terraform plan
         env:
           TF_VAR_runtime_secret_value: ${{ secrets.TICKETFLOW_RUNTIME_SECRET }}
         run: |
-          terraform plan -out=tfplan-prod \
-            -var-file=envs/prod/prod.tfvars -no-color
+          terraform plan -out=tfplan-staging \
+            -var-file=envs/staging/staging.tfvars -no-color
         working-directory: infra
 
-      - name: Upload tfplan-prod artifact
+      - name: Upload tfplan-staging artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan-prod
-          path: infra/tfplan-prod
+          name: tfplan-staging
+          path: infra/tfplan-staging
 
       - name: Upload project.zip artifact
         uses: actions/upload-artifact@v4
@@ -322,11 +326,11 @@ jobs:
           name: project-zip
           path: infra/tmp/project.zip
 
-  prod_apply:
-    name: Prod apply
-    needs: validate_prod
+  staging_apply:
+    name: Staging apply
+    needs: validate_staging
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: prod
+    environment: staging
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -338,10 +342,10 @@ jobs:
       - name: Ensure infra/tmp exists
         run: mkdir -p infra/tmp
 
-      - name: Download tfplan-prod artifact
+      - name: Download tfplan-staging artifact
         uses: actions/download-artifact@v4
         with:
-          name: tfplan-prod
+          name: tfplan-staging
           path: infra
 
       - name: Download project.zip artifact
@@ -369,22 +373,23 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform init
         run: terraform init
         working-directory: infra
 
-      - name: Select prod workspace
-        run: terraform workspace select prod || terraform workspace new prod
+      - name: Select staging workspace
+        run: terraform workspace select staging || terraform workspace new staging
         working-directory: infra
 
       # Delivery demo deployment is intentionally disabled for now.
       # - name: Terraform apply
-      #   run: terraform apply -auto-approve tfplan-prod
+      #   run: terraform apply -auto-approve tfplan-staging
       #   working-directory: infra
 
       # - name: Terraform destroy
-      #   run: terraform destroy -var-file=envs/prod/prod.tfvars -auto-approve
+      #   run: terraform destroy -var-file=envs/staging/staging.tfvars -auto-approve
       #   working-directory: infra

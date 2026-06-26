@@ -174,7 +174,7 @@ infra/
 ├── envs/
 │   ├── dev/
 │   │   └── dev.tfvars
-│   └── prod/
+│   └── staging/
 ├── modules/
 ├── docs/
 │   └── README.md

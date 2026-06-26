@@ -491,7 +491,7 @@ Para esta versión del proyecto se implementó un NAT Gateway debido a que:
 * Facilita la instalación de dependencias y actualizaciones.
 * Reduce la complejidad operativa durante el desarrollo.
 
-Sin embargo, para un entorno productivo sería recomendable complementar o reemplazar parcialmente el NAT Gateway mediante VPC Endpoints para Amazon S3 y DynamoDB, reduciendo costos y evitando que el tráfico hacia servicios AWS salga a Internet.
+Sin embargo, para un entorno stageuctivo sería recomendable complementar o reemplazar parcialmente el NAT Gateway mediante VPC Endpoints para Amazon S3 y DynamoDB, reduciendo costos y evitando que el tráfico hacia servicios AWS salga a Internet.
 
 # Anexo IA: Exploración de Diseño de Red y Patrones Descartados
 
@@ -566,7 +566,7 @@ Durante la exploración se analizó si el proyecto requería realmente un ALB co
 
 La conclusión fue mantener el ALB debido a que:
 
-* Es un requisito habitual en arquitecturas de producción.
+* Es un requisito habitual en arquitecturas de stageucción.
 * Permite desacoplar el punto de entrada público de la aplicación.
 * Facilita futuras ampliaciones horizontales.
 * Centraliza las reglas de acceso.
