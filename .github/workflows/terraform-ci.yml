@@ -252,6 +252,7 @@ jobs:
         run: terraform workspace select dev || terraform workspace new dev
         working-directory: infra
 
+      # disabling after live demo
       # - name: Terraform apply
       #   run: terraform apply -auto-approve tfplan-dev
       #   working-directory: infra
