@@ -5,6 +5,7 @@ import { ticketPriorities, ticketStatuses, TicketPriority, TicketStatus } from '
 import { suggestPriority } from '../domain/priority';
 import { calculateSla, evaluateSla } from '../domain/sla';
 import { Attachment, AuthUser, AuditEvent, Comment, Ticket, TicketFilters } from '../domain/types';
+import { AuditEventType } from '../domain/enums';
 import { assertFound, HttpError } from '../utils/http-error';
 import { NotificationService } from './notification-service';
 import { AsyncMessageService, systemAsyncActor } from './async-message-service';
@@ -93,6 +94,39 @@ export class TicketService {
     const ticket = await this.loadAuthorized(id, actor);
     const refreshed = await this.refreshSlaState(ticket);
     return this.present(refreshed, actor);
+  }
+
+  async getTicketHistory(
+    id: string,
+    actor: AuthUser,
+    options: { type?: AuditEventType; limit?: number; cursor?: string }
+  ): Promise<{ data: AuditEvent[]; nextCursor: string | null; total: number }> {
+    const ticket = await this.loadAuthorized(id, actor);
+    const presented = this.present(ticket, actor);
+
+    let events = presented.auditLog;
+
+    // Optional filter by event type
+    if (options.type) {
+      events = events.filter((e) => e.type === options.type);
+    }
+
+    const total = events.length;
+    const limit = options.limit ?? 50;
+
+    // Cursor-based pagination: cursor is the id of the last seen event
+    let startIndex = 0;
+    if (options.cursor) {
+      const idx = events.findIndex((e) => e.id === options.cursor);
+      if (idx !== -1) {
+        startIndex = idx + 1;
+      }
+    }
+
+    const page = events.slice(startIndex, startIndex + limit);
+    const nextCursor = startIndex + limit < total ? page[page.length - 1]?.id ?? null : null;
+
+    return { data: page, nextCursor, total };
   }
 
   async updateStatus(id: string, input: UpdateTicketStatusInput, actor: AuthUser): Promise<Ticket> {
