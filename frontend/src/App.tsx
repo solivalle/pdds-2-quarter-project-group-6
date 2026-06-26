@@ -24,7 +24,7 @@ const statuses: TicketStatus[] = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED',
 type WorkspaceView = 'tickets' | 'reports' | 'notifications';
 
 const demoUsers = [
-  { name: 'Ana Solicitante', email: 'ana@ticketflow.local', role: 'Solicitante' },
+  { name: 'Ana Solicitante Usuaria', email: 'ana@ticketflow.local', role: 'Solicitante' },
   { name: 'Luis Agente', email: 'luis@ticketflow.local', role: 'Agente' },
   { name: 'Sofia Supervisora', email: 'sofia@ticketflow.local', role: 'Supervisor' },
   { name: 'Admin TicketFlow', email: 'admin@ticketflow.local', role: 'Admin' }
