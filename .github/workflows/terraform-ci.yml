@@ -248,6 +248,7 @@ jobs:
         working-directory: infra
 
       # Delivery demo deployment is intentionally disabled for now.
+      # disabling after live demo
       # - name: Terraform apply
       #   run: terraform apply -auto-approve tfplan-dev
       #   working-directory: infra
