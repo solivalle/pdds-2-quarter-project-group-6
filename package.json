@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "deploy:prepare": "npm --prefix frontend ci && npm --prefix backend ci && npm run build",
     "build:frontend": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
     "dev:backend": "npm --prefix backend run dev",
