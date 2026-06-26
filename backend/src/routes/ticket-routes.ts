@@ -11,6 +11,7 @@ import {
   attachmentParamsSchema,
   createTicketSchema,
   listTicketsSchema,
+  ticketHistorySchema,
   ticketIdParamsSchema,
   updateStatusSchema
 } from './schemas';
@@ -34,6 +35,24 @@ export function ticketRoutes(tickets: TicketService): Router {
 
   router.get('/:ticketId', validate(ticketIdParamsSchema), asyncHandler(async (req, res) => {
     res.json({ data: await tickets.getTicket(param(req, 'ticketId'), requireUser(req)) });
+  }));
+
+  router.get('/:ticketId/history', validate(ticketHistorySchema), asyncHandler(async (req, res) => {
+    const { type, limit, cursor } = req.query as {
+      type?: string;
+      limit?: string;
+      cursor?: string;
+    };
+    const result = await tickets.getTicketHistory(
+      param(req, 'ticketId'),
+      requireUser(req),
+      {
+        type: type as any,
+        limit: limit !== undefined ? Number(limit) : undefined,
+        cursor
+      }
+    );
+    res.json(result);
   }));
 
   router.patch('/:ticketId/status', requireRole('AGENT', 'SUPERVISOR', 'ADMIN'), validate(updateStatusSchema), asyncHandler(async (req, res) => {
