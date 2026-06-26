@@ -256,9 +256,9 @@ jobs:
         run: terraform apply -auto-approve tfplan-dev
         working-directory: infra
 
-      # - name: Terraform destroy
-      #   run: terraform destroy -var-file=envs/dev/dev.tfvars -auto-approve
-      #   working-directory: infra
+      - name: Terraform destroy
+        run: terraform destroy -var-file=envs/dev/dev.tfvars -auto-approve
+        working-directory: infra
 
   validate_prod:
     name: Validate prod plan
@@ -387,6 +387,6 @@ jobs:
         run: terraform apply tfplan-prod
         working-directory: infra
 
-      # - name: Terraform destroy
-      #   run: terraform destroy -var-file=envs/prod/prod.tfvars -auto-approve
-      #   working-directory: infra
+      - name: Terraform destroy
+        run: terraform destroy -var-file=envs/prod/prod.tfvars -auto-approve
+        working-directory: infra
